@@ -11,7 +11,7 @@ import lombok.Setter;
 public class UserRes {
     private Long userId;
     private String username;
-    private String full_name;
+    private String fullName;
     private String email;
     private String phone;
     private Boolean status;

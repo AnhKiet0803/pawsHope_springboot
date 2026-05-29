@@ -48,15 +48,22 @@ public class AuthService {
                         input.getPassword()
                 )
         );
+
         User user = userRepository.findByEmail(input.getEmail())
                 .orElseThrow(() ->
                         new UsernameNotFoundException("Email or password is not correct"));
-        if (user == null)
-            throw new UsernameNotFoundException("Email or password is not correct");
+
         String jwtToken = jwtService.generateToken(user);
-        LoginRes loginRes = new LoginRes();
-        loginRes.setToken(jwtToken);
-        return loginRes;
+
+        return new LoginRes(
+                jwtToken,
+                user.getUserId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().name()
+        );
     }
 }
 
