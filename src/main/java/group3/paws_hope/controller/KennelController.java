@@ -9,6 +9,7 @@ import group3.paws_hope.service.KennelService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/kennels")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class KennelController {
     private final KennelService kennelService;
 
     @GetMapping()
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<KennelRes>>> getAll() {
         return ResponseHandler.success(kennelService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<KennelRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(kennelService.findById(id), "Success");
@@ -35,6 +37,7 @@ public class KennelController {
     }
 
     @PostMapping()
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<KennelRes>> create(@Valid @RequestBody KennelReq req) {
         KennelRes res = kennelService.create(req);
         return res != null ? ResponseHandler.success(res, "Success")
@@ -42,6 +45,7 @@ public class KennelController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<KennelRes>> update(@PathVariable Long id, @Valid @RequestBody KennelReq req) {
         KennelRes res = kennelService.update(id, req);
         return res != null ? ResponseHandler.success(res, "Updated successfully")
@@ -49,6 +53,7 @@ public class KennelController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         kennelService.delete(id);
 

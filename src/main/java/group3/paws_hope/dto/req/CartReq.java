@@ -8,9 +8,6 @@ import lombok.Setter;
 @Setter
 public class CartReq {
 
-    @NotNull(message = "User id cannot be null.")
-    private Long userId;
-
     @NotNull(message = "Product id cannot be null.")
     private Long productId;
 

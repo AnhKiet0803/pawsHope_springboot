@@ -26,9 +26,9 @@ public class CartService {
                 .toList();
     }
 
-    public CartRes addToCart(CartReq req) {
+    public CartRes addToCart(CartReq req, String email) {
         try {
-            User user = userRepository.findById(req.getUserId())
+            User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             Product product = productRepository.findById(req.getProductId())
@@ -43,7 +43,7 @@ public class CartService {
             }
 
             Cart cart = cartRepository
-                    .findByUser_UserIdAndProduct_ProductId(req.getUserId(), req.getProductId())
+                    .findByUser_UserIdAndProduct_ProductId(user.getUserId(), req.getProductId())
                     .orElse(null);
 
             if (cart != null) {

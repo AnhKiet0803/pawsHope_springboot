@@ -9,6 +9,7 @@ import group3.paws_hope.service.VolunteerApplicationService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/volunteer_applications")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class VolunteerApplicationController {
     private final VolunteerApplicationService volunteerApplicationService;
 
     @GetMapping()
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<VolunteerApplicationRes>>> getAll() {
         return ResponseHandler.success(volunteerApplicationService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerApplicationRes>> findById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(volunteerApplicationService.findById(id), "Success");
@@ -44,6 +46,7 @@ public class VolunteerApplicationController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerApplicationRes>> updateStatus(
             @PathVariable Long id,
             @RequestParam String status,
@@ -58,6 +61,7 @@ public class VolunteerApplicationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         volunteerApplicationService.delete(id);
         return ResponseHandler.success("Invoice deleted successfully.", "Success");

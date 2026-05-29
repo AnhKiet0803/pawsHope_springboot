@@ -9,6 +9,7 @@ import group3.paws_hope.service.VolunteerScheduleService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,11 +23,13 @@ public class VolunteerScheduleController {
     private final VolunteerScheduleService volunteerScheduleService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<VolunteerScheduleRes>>> getAll() {
         return ResponseHandler.success(volunteerScheduleService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(volunteerScheduleService.findById(id), "Success");
@@ -36,19 +39,17 @@ public class VolunteerScheduleController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO<VolunteerScheduleRes>> create(
-            @Valid @RequestBody VolunteerScheduleReq req) {
-
+    @PreAuthorize("hasAnyRole('VOLUNTEER', 'ADMIN')")
+    public ResponseEntity<ResponseDTO<VolunteerScheduleRes>> create(@Valid @RequestBody VolunteerScheduleReq req) {
         VolunteerScheduleRes res = volunteerScheduleService.create(req);
-
         if (res != null) {
             return ResponseHandler.success(res, "Schedule registered successfully.");
         }
-
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Register schedule failed");
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         volunteerScheduleService.delete(id);
         return ResponseHandler.success("Schedule deleted successfully.", "Success");

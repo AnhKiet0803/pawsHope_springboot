@@ -10,6 +10,7 @@ import group3.paws_hope.service.PetService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/pets")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class PetController {
     private final PetService petService;
 
@@ -45,6 +45,7 @@ public class PetController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetRes>> create(@Valid @RequestBody PetReq req) {
         PetRes res = petService.create(req);
         if (res != null) {
@@ -54,6 +55,7 @@ public class PetController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetRes>> update(@PathVariable Long id, @Valid @RequestBody PetReq req) {
         PetRes res = petService.update(id, req);
         if (res != null) {
@@ -63,6 +65,7 @@ public class PetController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetRes>> updateStatus(
             @PathVariable Long id,
             @Valid @RequestBody PetStatusLogReq req) {
@@ -74,6 +77,7 @@ public class PetController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         petService.delete(id);
         return ResponseHandler.success("Pet deleted successfully.", "Success");

@@ -38,8 +38,11 @@ public class DonationCampaignService {
         return DonationCampaignRes.toJson(campaign);
     }
 
-    public DonationCampaignRes create(DonationCampaignReq req) {
+    public DonationCampaignRes create(DonationCampaignReq req, String email) {
         try {
+            User creator = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
             DonationCampaign campaign = new DonationCampaign();
 
             campaign.setTitle(req.getTitle());
@@ -47,23 +50,19 @@ public class DonationCampaignService {
             campaign.setTargetAmount(req.getTargetAmount());
             campaign.setStartDate(req.getStartDate());
             campaign.setEndDate(req.getEndDate());
-
             if (req.getStatus() != null) {
                 campaign.setStatus(DonationCampaign.Status.valueOf(req.getStatus()));
             }
 
-            if (req.getCreatedBy() != null) {
-                User creator = userRepository.findById(req.getCreatedBy())
-                        .orElseThrow(() -> new RuntimeException("Creator not found"));
-                campaign.setCreatedBy(creator);
-            }
+            campaign.setCreatedBy(creator);
 
-            return DonationCampaignRes.toJson(donationCampaignRepository.save(campaign));
+            return DonationCampaignRes.toJson(
+                    donationCampaignRepository.save(campaign)
+            );
         } catch (Exception e) {
             return null;
         }
     }
-
     public DonationCampaignRes update(Long id, DonationCampaignReq req) {
         try {
             DonationCampaign campaign = donationCampaignRepository.findById(id)

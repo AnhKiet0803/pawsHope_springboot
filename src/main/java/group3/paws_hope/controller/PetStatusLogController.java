@@ -13,9 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/pet_status_logs")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class PetStatusLogController {
-
     private final PetStatusLogService petStatusLogService;
 
     @GetMapping

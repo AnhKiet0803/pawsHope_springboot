@@ -9,6 +9,7 @@ import group3.paws_hope.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<NotificationRes>>> getAll() {
         return ResponseHandler.success(notificationService.getAll(), "Success");
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<NotificationRes>>> getByUserId(
             @PathVariable Long userId) {
 
@@ -33,16 +35,19 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}/unread")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<NotificationRes>>> getUnreadByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(notificationService.getUnreadByUserId(userId), "Success");
     }
 
     @GetMapping("/user/{userId}/unread-count")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<Long>> countUnread(@PathVariable Long userId) {
         return ResponseHandler.success(notificationService.countUnread(userId), "Success");
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<NotificationRes>> create(@Valid @RequestBody NotificationReq req) {
         NotificationRes res = notificationService.create(req);
         if (res != null) {
@@ -52,6 +57,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/{id}/read")
+    @PreAuthorize("hasRole('ADMIN') or @notificationSecurity.isOwner(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<NotificationRes>> markAsRead(@PathVariable Long id) {
 
         NotificationRes res = notificationService.markAsRead(id);
@@ -69,6 +75,7 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @notificationSecurity.isOwner(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         notificationService.delete(id);
         return ResponseHandler.success("Notification deleted successfully.", "Success");

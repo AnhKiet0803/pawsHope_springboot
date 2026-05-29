@@ -83,7 +83,7 @@ public class RescueReportService {
         }
     }
 
-    public RescueReportRes accept(Long reportId, Long userId) {
+    public RescueReportRes accept(Long reportId, String email) {
         try {
             RescueReport rescueReport = rescueReportRepository.findById(reportId)
                     .orElseThrow(() -> new RuntimeException("Rescue report not found"));
@@ -96,7 +96,7 @@ public class RescueReportService {
                 throw new RuntimeException("Only pending rescue reports can be accepted");
             }
 
-            User receiver = userRepository.findById(userId)
+            User receiver = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             if (receiver.getRole() != User.Role.ADMIN

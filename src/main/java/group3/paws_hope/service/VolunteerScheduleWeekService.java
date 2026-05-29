@@ -18,7 +18,6 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class VolunteerScheduleWeekService {
-
     private final VolunteerScheduleWeekRepository volunteerScheduleWeekRepository;
     private final VolunteerScheduleWindowRepository volunteerScheduleWindowRepository;
     private final UserRepository userRepository;
@@ -59,7 +58,6 @@ public class VolunteerScheduleWeekService {
             week.setStatus(VolunteerScheduleWeek.Status.DRAFT);
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
-
         } catch (Exception e) {
             return null;
         }
@@ -83,18 +81,17 @@ public class VolunteerScheduleWeekService {
             week.setSubmittedAt(LocalDateTime.now());
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
-
         } catch (Exception e) {
             return null;
         }
     }
 
-    public VolunteerScheduleWeekRes approve(Long id, Long approvedBy) {
+    public VolunteerScheduleWeekRes approve(Long id, String email) {
         try {
             VolunteerScheduleWeek week = volunteerScheduleWeekRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Schedule week not found"));
 
-            User admin = userRepository.findById(approvedBy)
+            User admin = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Approver not found"));
 
             week.setStatus(VolunteerScheduleWeek.Status.APPROVED);
@@ -103,7 +100,6 @@ public class VolunteerScheduleWeekService {
             week.setRejectionReason(null);
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
-
         } catch (Exception e) {
             return null;
         }
@@ -123,7 +119,6 @@ public class VolunteerScheduleWeekService {
             week.setRejectionReason(reason);
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
-
         } catch (Exception e) {
             return null;
         }

@@ -9,6 +9,7 @@ import group3.paws_hope.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/orders")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class OrderController {
     private final OrderService orderService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<OrderRes>>> getAll() {
         return ResponseHandler.success(orderService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @orderSecurity.isOwner(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<OrderRes>> findById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(orderService.findById(id), "Success");
@@ -35,11 +37,13 @@ public class OrderController {
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<OrderRes>>> getByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(orderService.getByUserId(userId), "Success");
     }
 
     @PostMapping("/checkout")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ResponseDTO<OrderRes>> createFromCart(@Valid @RequestBody OrderReq req) {
         OrderRes res = orderService.createFromCart(req);
         if (res != null) {
@@ -49,6 +53,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/order-status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<OrderRes>> updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
         OrderRes res = orderService.updateOrderStatus(id, status);
         if (res != null) {
@@ -58,6 +63,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/payment-status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<OrderRes>> updatePaymentStatus(@PathVariable Long id, @RequestParam String status) {
         OrderRes res = orderService.updatePaymentStatus(id, status);
         if (res != null) {

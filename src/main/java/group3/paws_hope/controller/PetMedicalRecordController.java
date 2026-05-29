@@ -9,6 +9,7 @@ import group3.paws_hope.service.PetMedicalRecordService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,17 +17,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/pet_medical_records")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class PetMedicalRecordController {
 
     private final PetMedicalRecordService petMedicalRecordService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<PetMedicalRecordRes>>> getAll() {
         return ResponseHandler.success(petMedicalRecordService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetMedicalRecordRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(petMedicalRecordService.getById(id), "Success");
@@ -36,11 +38,13 @@ public class PetMedicalRecordController {
     }
 
     @GetMapping("/pet/{petId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<PetMedicalRecordRes>>> getByPetId(@PathVariable Long petId) {
         return ResponseHandler.success(petMedicalRecordService.getByPetId(petId), "Success");
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetMedicalRecordRes>> create(@Valid @RequestBody PetMedicalRecordReq req) {
         PetMedicalRecordRes res = petMedicalRecordService.create(req);
         if (res != null) {
@@ -50,6 +54,7 @@ public class PetMedicalRecordController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetMedicalRecordRes>> update(
             @PathVariable Long id, @Valid @RequestBody PetMedicalRecordReq req) {
 
@@ -61,6 +66,7 @@ public class PetMedicalRecordController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         petMedicalRecordService.delete(id);
         return ResponseHandler.success("Medical record deleted successfully.", "Success");

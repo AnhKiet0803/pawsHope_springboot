@@ -24,5 +24,4 @@ public class DonationCampaignReq {
     private LocalDate endDate;
 
     private String status;
-    private Long createdBy;
 }

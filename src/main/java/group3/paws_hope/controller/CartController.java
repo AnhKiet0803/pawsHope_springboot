@@ -9,6 +9,8 @@ import group3.paws_hope.service.CartService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,28 +18,28 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/cart")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class CartController {
-
     private final CartService cartService;
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<CartRes>>> getByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(cartService.getByUserId(userId), "Success");
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO<CartRes>> addToCart(@Valid @RequestBody CartReq req) {
-        CartRes res = cartService.addToCart(req);
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ResponseDTO<CartRes>> addToCart(
+            @Valid @RequestBody CartReq req,
+            Authentication authentication
+    ) {
+        CartRes res = cartService.addToCart(req, authentication.getName());
 
-        if (res != null) {
-            return ResponseHandler.success(res, "Product added to cart.");
-        }
-
-        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Add to cart failed");
+        return ResponseHandler.success(res, "Product added to cart.");
     }
 
     @PatchMapping("/{cartId}/quantity")
+    @PreAuthorize("@cartSecurity.isOwner(#cartId, authentication.name)")
     public ResponseEntity<ResponseDTO<CartRes>> updateQuantity(
             @PathVariable Long cartId,
             @RequestParam Integer quantity) {
@@ -52,12 +54,14 @@ public class CartController {
     }
 
     @DeleteMapping("/{cartId}")
+    @PreAuthorize("@cartSecurity.isOwner(#cartId, authentication.name)")
     public ResponseEntity<ResponseDTO<String>> remove(@PathVariable Long cartId) {
         cartService.remove(cartId);
         return ResponseHandler.success("Cart item removed.", "Success");
     }
 
     @DeleteMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<String>> clearCart(@PathVariable Long userId) {
         cartService.clearCart(userId);
         return ResponseHandler.success("Cart cleared.", "Success");

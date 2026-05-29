@@ -9,6 +9,7 @@ import group3.paws_hope.service.VolunteerInterviewService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,17 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/volunteer_interviews")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class VolunteerInterviewController {
-
     private final VolunteerInterviewService volunteerInterviewService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<VolunteerInterviewRes>>> getAll() {
         return ResponseHandler.success(volunteerInterviewService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerInterviewRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(volunteerInterviewService.findById(id), "Success");
@@ -36,6 +37,7 @@ public class VolunteerInterviewController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerInterviewRes>> create(
             @Valid @RequestBody VolunteerInterviewReq req) {
 
@@ -49,6 +51,7 @@ public class VolunteerInterviewController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerInterviewRes>> update(
             @PathVariable Long id,
             @Valid @RequestBody VolunteerInterviewReq req) {
@@ -63,6 +66,7 @@ public class VolunteerInterviewController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerInterviewRes>> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {
@@ -77,6 +81,7 @@ public class VolunteerInterviewController {
     }
 
     @PatchMapping("/{id}/result")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerInterviewRes>> updateResult(
             @PathVariable Long id,
             @RequestParam String result,
@@ -92,6 +97,7 @@ public class VolunteerInterviewController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         volunteerInterviewService.delete(id);
         return ResponseHandler.success("Interview deleted successfully.", "Success");

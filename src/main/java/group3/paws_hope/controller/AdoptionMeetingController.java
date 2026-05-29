@@ -9,6 +9,7 @@ import group3.paws_hope.service.AdoptionMeetingService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,17 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/adoption_meetings")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdoptionMeetingController {
-
     private final AdoptionMeetingService adoptionMeetingService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<AdoptionMeetingRes>>> getAll() {
         return ResponseHandler.success(adoptionMeetingService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByMeetingId(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<AdoptionMeetingRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(adoptionMeetingService.findById(id), "Success");
@@ -36,11 +37,13 @@ public class AdoptionMeetingController {
     }
 
     @GetMapping("/adoption/{adoptionId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByAdoptionId(#adoptionId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<AdoptionMeetingRes>>> getByAdoptionId(@PathVariable Long adoptionId) {
         return ResponseHandler.success(adoptionMeetingService.getByAdoptionId(adoptionId), "Success");
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionMeetingRes>> create(@Valid @RequestBody AdoptionMeetingReq req) {
         AdoptionMeetingRes res = adoptionMeetingService.create(req);
         if (res != null) {
@@ -51,6 +54,7 @@ public class AdoptionMeetingController {
     }
 
     @PatchMapping("/{id}/result")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionMeetingRes>> updateResult(
             @PathVariable Long id, @RequestParam String result, @RequestParam(required = false) String note) {
 
@@ -64,6 +68,7 @@ public class AdoptionMeetingController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionMeetingRes>> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {
@@ -76,6 +81,7 @@ public class AdoptionMeetingController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         adoptionMeetingService.delete(id);
         return ResponseHandler.success("Meeting deleted successfully.", "Success");

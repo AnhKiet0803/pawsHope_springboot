@@ -9,6 +9,7 @@ import group3.paws_hope.service.ItemDonationService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/item_donations")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class ItemDonationController {
     private final ItemDonationService itemDonationService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<ItemDonationRes>>> getAll() {
         return ResponseHandler.success(itemDonationService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<ItemDonationRes>> findById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(itemDonationService.findById(id), "Success");
@@ -35,16 +37,19 @@ public class ItemDonationController {
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<ItemDonationRes>>> getByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(itemDonationService.getByUserId(userId), "Success");
     }
 
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<ItemDonationRes>>> getByStatus(@PathVariable String status) {
         return ResponseHandler.success(itemDonationService.getByStatus(status), "Success");
     }
 
     @GetMapping("/category/{category}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<ItemDonationRes>>> getByCategory(@PathVariable String category) {
         return ResponseHandler.success(
                 itemDonationService.getByCategory(category), "Success");
@@ -60,6 +65,7 @@ public class ItemDonationController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<ItemDonationRes>> update(
             @PathVariable Long id, @Valid @RequestBody ItemDonationReq req) {
 
@@ -71,6 +77,7 @@ public class ItemDonationController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<ItemDonationRes>> updateStatus(
             @PathVariable Long id, @RequestParam String status, @RequestParam(required = false) Long receivedBy) {
 
@@ -82,6 +89,7 @@ public class ItemDonationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         itemDonationService.delete(id);
         return ResponseHandler.success("Item donation deleted successfully.", "Success");

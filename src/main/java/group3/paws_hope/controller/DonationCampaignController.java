@@ -9,6 +9,8 @@ import group3.paws_hope.service.DonationCampaignService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/donation_campaigns")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class DonationCampaignController {
     private final DonationCampaignService donationCampaignService;
 
@@ -40,15 +41,16 @@ public class DonationCampaignController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO<DonationCampaignRes>> create(@Valid @RequestBody DonationCampaignReq req) {
-        DonationCampaignRes res = donationCampaignService.create(req);
-        if (res != null) {
-            return ResponseHandler.success(res, "Campaign created successfully.");
-        }
-        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Create campaign failed");
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO<DonationCampaignRes>> create(
+            @Valid @RequestBody DonationCampaignReq req, Authentication authentication) {
+
+        DonationCampaignRes res = donationCampaignService.create(req, authentication.getName());
+        return ResponseHandler.success(res, "Campaign created successfully");
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<DonationCampaignRes>> update(
             @PathVariable Long id, @Valid @RequestBody DonationCampaignReq req) {
 
@@ -60,6 +62,7 @@ public class DonationCampaignController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<DonationCampaignRes>> updateStatus(
             @PathVariable Long id, @RequestParam String status) {
 
@@ -71,6 +74,7 @@ public class DonationCampaignController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         donationCampaignService.delete(id);
         return ResponseHandler.success("Campaign deleted successfully.", "Success");

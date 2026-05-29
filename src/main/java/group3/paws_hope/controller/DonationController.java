@@ -9,6 +9,7 @@ import group3.paws_hope.service.DonationService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,17 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/donations")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class DonationController {
-
     private final DonationService donationService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<DonationRes>>> getAll() {
         return ResponseHandler.success(donationService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','VOLUNTEER')")
     public ResponseEntity<ResponseDTO<DonationRes>> findById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(donationService.findById(id), "Success");
@@ -36,11 +37,13 @@ public class DonationController {
     }
 
     @GetMapping("/campaign/{campaignId}")
+    @PreAuthorize("hasAnyRole('ADMIN','VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<DonationRes>>> getByCampaignId(@PathVariable Long campaignId) {
         return ResponseHandler.success(donationService.getByCampaignId(campaignId), "Success");
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN','VOLUNTEER') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<DonationRes>>> getByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(donationService.getByUserId(userId), "Success");
     }
@@ -55,6 +58,7 @@ public class DonationController {
     }
 
     @PatchMapping("/{id}/payment-status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<DonationRes>> updatePaymentStatus(
             @PathVariable Long id, @RequestParam String status) {
 
@@ -66,6 +70,7 @@ public class DonationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         donationService.delete(id);
         return ResponseHandler.success("Donation deleted successfully.", "Success");

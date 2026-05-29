@@ -9,6 +9,7 @@ import group3.paws_hope.service.AdoptionHandoverService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/adoption_handovers")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdoptionHandoverController {
     private final AdoptionHandoverService adoptionHandoverService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<AdoptionHandoverRes>>> getAll() {
         return ResponseHandler.success(adoptionHandoverService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByHandoverId(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(adoptionHandoverService.findById(id), "Success");
@@ -35,11 +37,13 @@ public class AdoptionHandoverController {
     }
 
     @GetMapping("/adoption/{adoptionId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByAdoptionId(#adoptionId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<AdoptionHandoverRes>>> getByAdoptionId(@PathVariable Long adoptionId) {
         return ResponseHandler.success(adoptionHandoverService.getByAdoptionId(adoptionId), "Success");
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> create(@Valid @RequestBody AdoptionHandoverReq req) {
         AdoptionHandoverRes res = adoptionHandoverService.create(req);
         if (res != null) {
@@ -49,6 +53,7 @@ public class AdoptionHandoverController {
     }
 
     @PatchMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> confirm(@PathVariable Long id) {
         AdoptionHandoverRes res = adoptionHandoverService.confirm(id);
         if (res != null) {
@@ -58,6 +63,7 @@ public class AdoptionHandoverController {
     }
 
     @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> complete(
             @PathVariable Long id, @RequestParam(required = false) String completionNote) {
 
@@ -69,6 +75,7 @@ public class AdoptionHandoverController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> updateStatus(
             @PathVariable Long id, @RequestParam String status) {
 
@@ -80,6 +87,7 @@ public class AdoptionHandoverController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         adoptionHandoverService.delete(id);
         return ResponseHandler.success("Handover deleted successfully.", "Success");

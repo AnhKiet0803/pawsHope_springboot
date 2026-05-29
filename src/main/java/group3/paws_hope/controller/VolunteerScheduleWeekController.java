@@ -9,6 +9,8 @@ import group3.paws_hope.service.VolunteerScheduleWeekService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,11 +24,13 @@ public class VolunteerScheduleWeekController {
     private final VolunteerScheduleWeekService volunteerScheduleWeekService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<VolunteerScheduleWeekRes>>> getAll() {
         return ResponseHandler.success(volunteerScheduleWeekService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(volunteerScheduleWeekService.findById(id), "Success");
@@ -36,6 +40,7 @@ public class VolunteerScheduleWeekController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('VOLUNTEER','ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> create(
             @Valid @RequestBody VolunteerScheduleWeekReq req) {
 
@@ -49,6 +54,7 @@ public class VolunteerScheduleWeekController {
     }
 
     @PatchMapping("/{id}/submit")
+    @PreAuthorize("hasAnyRole('VOLUNTEER','ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> submit(@PathVariable Long id) {
         VolunteerScheduleWeekRes res = volunteerScheduleWeekService.submit(id);
 
@@ -61,35 +67,34 @@ public class VolunteerScheduleWeekController {
     }
 
     @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> approve(
             @PathVariable Long id,
-            @RequestParam Long approvedBy) {
+            Authentication authentication) {
 
-        VolunteerScheduleWeekRes res = volunteerScheduleWeekService.approve(id, approvedBy);
-
+        VolunteerScheduleWeekRes res = volunteerScheduleWeekService.approve(id, authentication.getName());
         if (res != null) {
             return ResponseHandler.success(res, "Schedule week approved successfully.");
         }
-
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Approve failed");
     }
 
     @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> reject(
             @PathVariable Long id,
             @RequestParam Long approvedBy,
             @RequestParam String reason) {
 
         VolunteerScheduleWeekRes res = volunteerScheduleWeekService.reject(id, approvedBy, reason);
-
         if (res != null) {
             return ResponseHandler.success(res, "Schedule week rejected successfully.");
         }
-
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Reject failed");
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         volunteerScheduleWeekService.delete(id);
         return ResponseHandler.success("Schedule week deleted successfully.", "Success");

@@ -9,6 +9,7 @@ import group3.paws_hope.service.ExpenseService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -17,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/expenses")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class ExpenseController {
     private final ExpenseService expenseService;
 
@@ -52,6 +52,7 @@ public class ExpenseController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<ExpenseRes>> create(@Valid @RequestBody ExpenseReq req) {
         ExpenseRes res = expenseService.create(req);
         if (res != null) {
@@ -61,6 +62,7 @@ public class ExpenseController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<ExpenseRes>> update(
             @PathVariable Long id, @Valid @RequestBody ExpenseReq req) {
 
@@ -72,6 +74,7 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         expenseService.delete(id);
         return ResponseHandler.success("Expense deleted successfully.", "Success");

@@ -9,6 +9,7 @@ import group3.paws_hope.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/products")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class ProductController {
     private final ProductService productService;
 
@@ -40,6 +40,7 @@ public class ProductController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<ProductRes>> create(@Valid @RequestBody ProductReq req) {
         ProductRes res = productService.create(req);
         if (res != null) {
@@ -49,6 +50,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<ProductRes>> update(@PathVariable Long id, @Valid @RequestBody ProductReq req) {
         ProductRes res = productService.update(id, req);
         if (res != null) {
@@ -58,6 +60,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}/active")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<ProductRes>> updateActive(@PathVariable Long id, @RequestParam Boolean isActive) {
         ProductRes res = productService.updateActive(id, isActive);
         if (res != null) {
@@ -67,6 +70,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         productService.delete(id);
         return ResponseHandler.success("Product deleted successfully.", "Success");

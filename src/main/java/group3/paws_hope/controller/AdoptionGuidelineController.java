@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/adoption_guidelines")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdoptionGuidelineController {
     private final AdoptionGuidelineService adoptionGuidelineService;
 
@@ -42,6 +42,7 @@ public class AdoptionGuidelineController {
     }
 
     @PostMapping()
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<AdoptionGuidelineRes>> create(@Valid @RequestBody AdoptionGuidelineReq req) {
         try {
             return ResponseHandler.success(adoptionGuidelineService.create(req), "Success");
@@ -53,6 +54,7 @@ public class AdoptionGuidelineController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<AdoptionGuidelineRes>> update(@PathVariable Long id, @Valid @RequestBody AdoptionGuidelineReq req) {
         try {
             return ResponseHandler.success(adoptionGuidelineService.update(id, req), "Success");
@@ -62,6 +64,7 @@ public class AdoptionGuidelineController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         try {
             adoptionGuidelineService.delete(id);

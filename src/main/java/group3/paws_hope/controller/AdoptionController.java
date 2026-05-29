@@ -9,6 +9,7 @@ import group3.paws_hope.service.AdoptionService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,16 +17,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/adoptions")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdoptionController {
     private final AdoptionService adoptionService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<AdoptionRes>>> getAll() {
         return ResponseHandler.success(adoptionService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByAdoptionId(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<AdoptionRes>> getById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(adoptionService.findById(id), "Success");
@@ -35,6 +37,7 @@ public class AdoptionController {
     }
 
     @GetMapping("/code/{code}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByApplicationCode(#code, authentication.name)")
     public ResponseEntity<ResponseDTO<AdoptionRes>> getByApplicationCode(@PathVariable String code) {
         try {
             return ResponseHandler.success(adoptionService.getByApplicationCode(code), "Success");
@@ -44,11 +47,13 @@ public class AdoptionController {
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<AdoptionRes>>> getByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(adoptionService.getByUserId(userId), "Success");
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<ResponseDTO<AdoptionRes>> create(@Valid @RequestBody AdoptionReq req) {
         AdoptionRes res = adoptionService.create(req);
         if (res != null) {
@@ -59,6 +64,7 @@ public class AdoptionController {
     }
 
     @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionRes>> approve(@PathVariable Long id, @RequestParam Long processedBy) {
         AdoptionRes res = adoptionService.approve(id, processedBy);
         if (res != null) {
@@ -68,6 +74,7 @@ public class AdoptionController {
     }
 
     @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionRes>> reject(
             @PathVariable Long id,@RequestParam Long processedBy,@RequestParam(required = false) String note) {
         AdoptionRes res = adoptionService.reject(id, processedBy, note);
@@ -78,6 +85,7 @@ public class AdoptionController {
     }
 
     @PatchMapping("/{id}/payment-status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionRes>> updatePaymentStatus(
             @PathVariable Long id, @RequestParam String paymentStatus) {
         AdoptionRes res = adoptionService.updatePaymentStatus(id, paymentStatus);
@@ -88,6 +96,7 @@ public class AdoptionController {
     }
 
     @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionRes>> complete(@PathVariable Long id) {
         AdoptionRes res = adoptionService.complete(id);
         if (res != null) {
@@ -97,6 +106,7 @@ public class AdoptionController {
     }
 
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByAdoptionId(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<AdoptionRes>> cancel(@PathVariable Long id) {
         AdoptionRes res = adoptionService.cancel(id);
         if (res != null) {
@@ -106,6 +116,7 @@ public class AdoptionController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         adoptionService.delete(id);
         return ResponseHandler.success("Adoption deleted successfully.", "Success");
