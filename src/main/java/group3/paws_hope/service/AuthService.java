@@ -58,7 +58,7 @@ public class AuthService {
         return new LoginRes(
                 jwtToken,
                 user.getUserId(),
-                user.getUsername(),
+                user.getRealUsername(),
                 user.getFullName(),
                 user.getEmail(),
                 user.getPhone(),
