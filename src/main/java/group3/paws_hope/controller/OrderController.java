@@ -21,13 +21,13 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<OrderRes>>> getAll() {
         return ResponseHandler.success(orderService.getAll(), "Success");
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @orderSecurity.isOwner(#id, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or @orderSecurity.isOwner(#id, authentication.name)")
     public ResponseEntity<ResponseDTO<OrderRes>> findById(@PathVariable Long id) {
         try {
             return ResponseHandler.success(orderService.findById(id), "Success");
@@ -37,7 +37,7 @@ public class OrderController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @userSecurity.isOwner(#userId, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
     public ResponseEntity<ResponseDTO<List<OrderRes>>> getByUserId(@PathVariable Long userId) {
         return ResponseHandler.success(orderService.getByUserId(userId), "Success");
     }
@@ -53,7 +53,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/order-status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<OrderRes>> updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
         OrderRes res = orderService.updateOrderStatus(id, status);
         if (res != null) {
