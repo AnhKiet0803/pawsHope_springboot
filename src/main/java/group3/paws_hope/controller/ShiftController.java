@@ -61,4 +61,10 @@ public class ShiftController {
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Update failed");
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
+        shiftService.delete(id);
+        return ResponseHandler.success("Shift deleted successfully.", "Success");
+    }
 }

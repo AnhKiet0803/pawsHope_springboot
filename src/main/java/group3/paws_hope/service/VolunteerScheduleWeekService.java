@@ -11,6 +11,7 @@ import group3.paws_hope.repository.VolunteerScheduleWeekRepository;
 import group3.paws_hope.repository.VolunteerScheduleWindowRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +23,7 @@ public class VolunteerScheduleWeekService {
     private final VolunteerScheduleWindowRepository volunteerScheduleWindowRepository;
     private final UserRepository userRepository;
     private final VolunteerScheduleRepository volunteerScheduleRepository;
+    private final VolunteerScheduleService volunteerScheduleService;
 
     public List<VolunteerScheduleWeekRes> getAll() {
         return volunteerScheduleWeekRepository.findAll().stream()
@@ -36,6 +38,7 @@ public class VolunteerScheduleWeekService {
         return VolunteerScheduleWeekRes.toJson(week);
     }
 
+    @Transactional
     public VolunteerScheduleWeekRes create(VolunteerScheduleWeekReq req) {
         try {
             VolunteerScheduleWindow window = volunteerScheduleWindowRepository.findById(req.getWindowId())
@@ -57,7 +60,11 @@ public class VolunteerScheduleWeekService {
             week.setWeekEndDate(window.getWeekEndDate());
             week.setStatus(VolunteerScheduleWeek.Status.DRAFT);
 
-            return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
+            VolunteerScheduleWeek savedWeek = volunteerScheduleWeekRepository.save(week);
+
+            volunteerScheduleService.autoAssignAdminForNewWeek(savedWeek);
+
+            return VolunteerScheduleWeekRes.toJson(savedWeek);
         } catch (Exception e) {
             return null;
         }

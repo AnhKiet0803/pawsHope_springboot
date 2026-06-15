@@ -17,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/volunteer_schedules")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class VolunteerScheduleController {
 
     private final VolunteerScheduleService volunteerScheduleService;
@@ -26,6 +25,16 @@ public class VolunteerScheduleController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<VolunteerScheduleRes>>> getAll() {
         return ResponseHandler.success(volunteerScheduleService.getAll(), "Success");
+    }
+
+    @GetMapping("/window/{windowId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO<List<VolunteerScheduleRes>>> getByWindow(
+            @PathVariable Long windowId) {
+        return ResponseHandler.success(
+                volunteerScheduleService.getByWindow(windowId),
+                "Success"
+        );
     }
 
     @GetMapping("/{id}")

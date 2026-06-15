@@ -51,4 +51,7 @@ public class ShiftService {
         }
     }
 
+    public void delete(Long id) {
+        shiftRepository.deleteById(id);
+    }
 }

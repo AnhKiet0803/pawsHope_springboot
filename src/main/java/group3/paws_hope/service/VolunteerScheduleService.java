@@ -30,6 +30,13 @@ public class VolunteerScheduleService {
                 .toList();
     }
 
+    public List<VolunteerScheduleRes> getByWindow(Long windowId) {
+        return volunteerScheduleRepository.findByWeek_Window_WindowId(windowId)
+                .stream()
+                .map(VolunteerScheduleRes::toJson)
+                .toList();
+    }
+
     public VolunteerScheduleRes findById(Long id) {
         VolunteerSchedule schedule = volunteerScheduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
@@ -47,6 +54,10 @@ public class VolunteerScheduleService {
 
             Shift shift = shiftRepository.findById(req.getShiftId())
                     .orElseThrow(() -> new RuntimeException("Shift not found"));
+
+            if (shift.getShiftId().equals(4L) && user.getRole() != User.Role.ADMIN) {
+                throw new RuntimeException("Shift 4 is reserved for administrators.");
+            }
 
             if (!week.getUser().getUserId().equals(req.getUserId())) {
                 throw new RuntimeException("User does not own this schedule week");
@@ -82,5 +93,30 @@ public class VolunteerScheduleService {
 
     public void delete(Long id) {
         volunteerScheduleRepository.deleteById(id);
+    }
+
+    public void autoAssignAdminForNewWeek(VolunteerScheduleWeek week) {
+        // 1. Tìm tài khoản ADMIN hệ thống
+        User adminUser = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == User.Role.ADMIN)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        Shift adminShift = shiftRepository.findById(4L)
+                .orElseThrow(() -> new RuntimeException("Shift 4 not found in the database"));
+
+        java.time.LocalDate currentDate = week.getWeekStartDate();
+        while (!currentDate.isAfter(week.getWeekEndDate())) {
+
+            VolunteerSchedule adminSchedule = new VolunteerSchedule();
+            adminSchedule.setWeek(week);
+            adminSchedule.setUser(adminUser);
+            adminSchedule.setShift(adminShift);
+            adminSchedule.setWorkDate(currentDate);
+
+            volunteerScheduleRepository.save(adminSchedule);
+
+            currentDate = currentDate.plusDays(1);
+        }
     }
 }
