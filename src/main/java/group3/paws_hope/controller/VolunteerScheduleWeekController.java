@@ -5,6 +5,8 @@ import group3.paws_hope.dto.common.ResponseDTO;
 import group3.paws_hope.dto.req.VolunteerScheduleWeekReq;
 import group3.paws_hope.dto.res.VolunteerScheduleWeekRes;
 import group3.paws_hope.enums.StatusCode;
+import group3.paws_hope.repository.UserRepository;
+import group3.paws_hope.entity.User;
 import group3.paws_hope.service.VolunteerScheduleWeekService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -18,15 +20,28 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/volunteer_schedule_weeks")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class VolunteerScheduleWeekController {
 
     private final VolunteerScheduleWeekService volunteerScheduleWeekService;
+    private final UserRepository userRepository;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseDTO<List<VolunteerScheduleWeekRes>>> getAll() {
-        return ResponseHandler.success(volunteerScheduleWeekService.getAll(), "Success");
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    public ResponseEntity<ResponseDTO<List<VolunteerScheduleWeekRes>>> getAll(Authentication authentication) {
+        if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return ResponseHandler.success(volunteerScheduleWeekService.getAll(), "Success");
+        }
+
+        String loginName = authentication.getName();
+
+        // Thử tìm theo Email trước
+        User currentUser = userRepository.findByEmail(loginName).orElse(null);
+
+        if (currentUser == null) {
+            return ResponseHandler.success(new java.util.ArrayList<>(), "User not found in session");
+        }
+
+        return ResponseHandler.success(volunteerScheduleWeekService.getByUserId(currentUser.getUserId()), "Success");
     }
 
     @GetMapping("/{id}")
@@ -43,14 +58,15 @@ public class VolunteerScheduleWeekController {
     @PreAuthorize("hasAnyRole('VOLUNTEER','ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> create(
             @Valid @RequestBody VolunteerScheduleWeekReq req) {
-
-        VolunteerScheduleWeekRes res = volunteerScheduleWeekService.create(req);
-
-        if (res != null) {
-            return ResponseHandler.success(res, "Schedule week created successfully.");
+        try {
+            VolunteerScheduleWeekRes res = volunteerScheduleWeekService.create(req);
+            if (res != null) {
+                return ResponseHandler.success(res, "Schedule week created successfully.");
+            }
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, "Create schedule week failed");
+        } catch (Exception e) {
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, e.getMessage());
         }
-
-        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Create schedule week failed");
     }
 
     @PatchMapping("/{id}/submit")
@@ -66,7 +82,7 @@ public class VolunteerScheduleWeekController {
                 "Submit failed. Minimum 5 working days required.");
     }
 
-    @PatchMapping("/{id}/approve")
+    @PutMapping("/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> approve(
             @PathVariable Long id,
@@ -79,14 +95,19 @@ public class VolunteerScheduleWeekController {
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Approve failed");
     }
 
-    @PatchMapping("/{id}/reject")
+    @PutMapping("/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWeekRes>> reject(
             @PathVariable Long id,
-            @RequestParam Long approvedBy,
-            @RequestParam String reason) {
+            @RequestBody java.util.Map<String, String> body,
+            Authentication authentication) {
 
-        VolunteerScheduleWeekRes res = volunteerScheduleWeekService.reject(id, approvedBy, reason);
+        String reason = body.get("rejectionReason");
+        if (reason == null || reason.trim().isEmpty()) {
+            reason = "No reason provided";
+        }
+
+        VolunteerScheduleWeekRes res = volunteerScheduleWeekService.reject(id, authentication.getName(), reason);
         if (res != null) {
             return ResponseHandler.success(res, "Schedule week rejected successfully.");
         }

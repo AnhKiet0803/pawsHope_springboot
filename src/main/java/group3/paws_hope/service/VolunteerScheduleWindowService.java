@@ -101,6 +101,13 @@ public class VolunteerScheduleWindowService {
     }
 
     private VolunteerScheduleWindow syncStatus(VolunteerScheduleWindow window) {
+        // 🟢 CẬP NHẬT: Nếu trạng thái hiện tại trong DB đang là CLOSED hoặc NOT_OPEN
+        // thì mới cần tính toán tự động. Còn nếu Admin đã cố tình sửa thành OPEN
+        // dưới DB hoặc qua UI để TEST, thì giữ nguyên trạng thái đó, không ép về nữa.
+        if (window.getStatus() == VolunteerScheduleWindow.Status.OPEN) {
+            return window;
+        }
+
         VolunteerScheduleWindow.Status newStatus = calculateStatus(window);
 
         if (window.getStatus() != newStatus) {
@@ -124,4 +131,5 @@ public class VolunteerScheduleWindowService {
 
         return VolunteerScheduleWindow.Status.OPEN;
     }
+
 }

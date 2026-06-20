@@ -21,6 +21,7 @@ public class VolunteerScheduleRes {
     private String shiftName;
     private LocalDate workDate;
     private Timestamp registeredAt;
+    private String weekStatus;
 
     public static VolunteerScheduleRes toJson(VolunteerSchedule schedule) {
         return new VolunteerScheduleRes(
@@ -32,7 +33,8 @@ public class VolunteerScheduleRes {
                 schedule.getShift().getShiftId(),
                 schedule.getShift().getShiftName(),
                 schedule.getWorkDate(),
-                schedule.getRegisteredAt()
+                schedule.getRegisteredAt(),
+                schedule.getWeek().getStatus() != null ? schedule.getWeek().getStatus().name() : "DRAFT"
         );
     }
 }

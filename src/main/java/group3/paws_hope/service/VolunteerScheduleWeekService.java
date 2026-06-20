@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,11 +24,30 @@ public class VolunteerScheduleWeekService {
     private final VolunteerScheduleWindowRepository volunteerScheduleWindowRepository;
     private final UserRepository userRepository;
     private final VolunteerScheduleRepository volunteerScheduleRepository;
-    private final VolunteerScheduleService volunteerScheduleService;
 
     public List<VolunteerScheduleWeekRes> getAll() {
         return volunteerScheduleWeekRepository.findAll().stream()
+                .filter(week -> week.getWindow() != null && week.getUser() != null)
                 .map(VolunteerScheduleWeekRes::toJson)
+                .toList();
+    }
+
+    public List<VolunteerScheduleWeekRes> getByUserId(Long userId) {
+        List<VolunteerScheduleWeek> userWeeks = volunteerScheduleWeekRepository.findByUser_UserId(userId);
+        if (userWeeks == null || userWeeks.isEmpty()) {
+            return new java.util.ArrayList<>(); // Trả về mảng rỗng an toàn nếu user chưa đăng ký tuần nào
+        }
+        return userWeeks.stream()
+                .filter(week -> week != null && week.getWindow() != null && week.getUser() != null)
+                .map(week -> {
+                    try {
+                        return VolunteerScheduleWeekRes.toJson(week);
+                    } catch (Exception e) {
+                        // Tránh việc 1 bản ghi lỗi làm sập toàn bộ danh sách
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 
@@ -44,16 +64,18 @@ public class VolunteerScheduleWeekService {
             VolunteerScheduleWindow window = volunteerScheduleWindowRepository.findById(req.getWindowId())
                     .orElseThrow(() -> new RuntimeException("Schedule window not found"));
 
-            User user = userRepository.findById(req.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            if (req.getUserId() == null) {
+                throw new RuntimeException("User ID constraint violation: User ID cannot be null");
+            }
 
-            if (volunteerScheduleWeekRepository.existsByUser_UserIdAndWeekStartDate(req.getUserId(),
-                    window.getWeekStartDate())) {
-                throw new RuntimeException("User already registered this week");
+            User user = userRepository.findById(req.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + req.getUserId()));
+
+            if (volunteerScheduleWeekRepository.existsByUser_UserIdAndWeekStartDate(user.getUserId(), window.getWeekStartDate())) {
+                throw new IllegalArgumentException("User already registered this week");
             }
 
             VolunteerScheduleWeek week = new VolunteerScheduleWeek();
-
             week.setWindow(window);
             week.setUser(user);
             week.setWeekStartDate(window.getWeekStartDate());
@@ -62,14 +84,14 @@ public class VolunteerScheduleWeekService {
 
             VolunteerScheduleWeek savedWeek = volunteerScheduleWeekRepository.save(week);
 
-            volunteerScheduleService.autoAssignAdminForNewWeek(savedWeek);
-
             return VolunteerScheduleWeekRes.toJson(savedWeek);
         } catch (Exception e) {
-            return null;
+            System.err.println("--- LỖI TẠI HÀM CREATE VOLUNTEER SCHEDULE WEEK ---");
+            e.printStackTrace();
+            throw e;
         }
     }
-
+    @Transactional
     public VolunteerScheduleWeekRes submit(Long id) {
         try {
             VolunteerScheduleWeek week = volunteerScheduleWeekRepository.findById(id)
@@ -93,6 +115,7 @@ public class VolunteerScheduleWeekService {
         }
     }
 
+    @Transactional
     public VolunteerScheduleWeekRes approve(Long id, String email) {
         try {
             VolunteerScheduleWeek week = volunteerScheduleWeekRepository.findById(id)
@@ -112,12 +135,13 @@ public class VolunteerScheduleWeekService {
         }
     }
 
-    public VolunteerScheduleWeekRes reject(Long id, Long approvedBy, String reason) {
+    @Transactional
+    public VolunteerScheduleWeekRes reject(Long id, String email, String reason) {
         try {
             VolunteerScheduleWeek week = volunteerScheduleWeekRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Schedule week not found"));
 
-            User admin = userRepository.findById(approvedBy)
+            User admin = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Approver not found"));
 
             week.setStatus(VolunteerScheduleWeek.Status.REJECTED);

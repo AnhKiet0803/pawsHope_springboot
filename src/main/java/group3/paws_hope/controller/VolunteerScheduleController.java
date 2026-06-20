@@ -22,13 +22,13 @@ public class VolunteerScheduleController {
     private final VolunteerScheduleService volunteerScheduleService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<VolunteerScheduleRes>>> getAll() {
         return ResponseHandler.success(volunteerScheduleService.getAll(), "Success");
     }
 
     @GetMapping("/window/{windowId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<List<VolunteerScheduleRes>>> getByWindow(
             @PathVariable Long windowId) {
         return ResponseHandler.success(
@@ -58,7 +58,7 @@ public class VolunteerScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<String>> delete(@PathVariable Long id) {
         volunteerScheduleService.delete(id);
         return ResponseHandler.success("Schedule deleted successfully.", "Success");

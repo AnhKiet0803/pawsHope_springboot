@@ -12,4 +12,6 @@ public interface VolunteerScheduleRepository extends JpaRepository<VolunteerSche
     int countByShift_ShiftIdAndWorkDate(Long shiftId, LocalDate workDate);
     int countDistinctWorkDateByWeek_WeekIdAndUser_UserId(Long weekId, Long userId);
     List<VolunteerSchedule> findByWeek_Window_WindowId(Long windowId);
+    boolean existsByUser_UserIdAndShift_ShiftIdAndWorkDate(Long userId, Long shiftId, LocalDate workDate);
+    boolean existsByUser_UserIdAndWorkDate(Long userId, LocalDate workDate);
 }

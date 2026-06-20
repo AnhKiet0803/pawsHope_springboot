@@ -28,15 +28,27 @@ public class VolunteerScheduleWeekRes {
     private Timestamp updatedAt;
 
     public static VolunteerScheduleWeekRes toJson(VolunteerScheduleWeek week) {
+        if (week == null) return null;
+
         return new VolunteerScheduleWeekRes(
                 week.getWeekId(),
-                week.getWindow().getWindowId(),
-                week.getUser().getUserId(),
+                // 🟢 ĐÃ SỬA: Bọc check null, nếu window bị xóa mất dưới DB thì trả về null chứ không làm sập API
+                week.getWindow() != null ? week.getWindow().getWindowId() : null,
+
+                // 🟢 ĐÃ SỬA: Bọc check null cho User
+                week.getUser() != null ? week.getUser().getUserId() : null,
+
                 week.getWeekStartDate(),
                 week.getWeekEndDate(),
-                week.getStatus().name(),
+
+                // 🟢 ĐÃ SỬA: Bọc check null cho Status enum
+                week.getStatus() != null ? week.getStatus().name() : "DRAFT",
+
                 week.getSubmittedAt(),
+
+                // 🟢 ĐÃ SỬA: Bọc check null cho Người duyệt (Admin)
                 week.getApprovedBy() != null ? week.getApprovedBy().getUserId() : null,
+
                 week.getApprovedAt(),
                 week.getRejectionReason(),
                 week.getCreatedAt(),

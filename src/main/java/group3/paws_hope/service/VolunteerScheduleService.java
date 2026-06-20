@@ -68,6 +68,14 @@ public class VolunteerScheduleService {
                 throw new RuntimeException("Work date must be inside this schedule week");
             }
 
+            if (volunteerScheduleRepository.existsByUser_UserIdAndWorkDate(
+                    req.getUserId(),
+                    req.getWorkDate())) {
+
+                throw new RuntimeException(
+                        "User already has a shift on this date");
+            }
+
             int totalRegistered = volunteerScheduleRepository.countByShift_ShiftIdAndWorkDate(
                     req.getShiftId(),
                     req.getWorkDate()
@@ -95,28 +103,4 @@ public class VolunteerScheduleService {
         volunteerScheduleRepository.deleteById(id);
     }
 
-    public void autoAssignAdminForNewWeek(VolunteerScheduleWeek week) {
-        // 1. Tìm tài khoản ADMIN hệ thống
-        User adminUser = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == User.Role.ADMIN)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        Shift adminShift = shiftRepository.findById(4L)
-                .orElseThrow(() -> new RuntimeException("Shift 4 not found in the database"));
-
-        java.time.LocalDate currentDate = week.getWeekStartDate();
-        while (!currentDate.isAfter(week.getWeekEndDate())) {
-
-            VolunteerSchedule adminSchedule = new VolunteerSchedule();
-            adminSchedule.setWeek(week);
-            adminSchedule.setUser(adminUser);
-            adminSchedule.setShift(adminShift);
-            adminSchedule.setWorkDate(currentDate);
-
-            volunteerScheduleRepository.save(adminSchedule);
-
-            currentDate = currentDate.plusDays(1);
-        }
-    }
 }
