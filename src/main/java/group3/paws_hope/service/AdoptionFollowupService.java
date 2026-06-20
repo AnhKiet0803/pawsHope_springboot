@@ -138,4 +138,67 @@ public class AdoptionFollowupService {
     public void delete(Long id) {
         adoptionFollowupRepository.deleteById(id);
     }
+
+
+    public List<AdoptionFollowupRes> getTodayFollowups() {
+        // Lấy danh sách các lịch theo dõi có ngày bằng hôm nay và trạng thái là SCHEDULED
+        return adoptionFollowupRepository.findByFollowupDateAndStatus(LocalDate.now(), AdoptionFollowup.Status.SCHEDULED)
+                .stream()
+                .map(AdoptionFollowupRes::toJson)
+                .toList();
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public AdoptionFollowupRes submitReport(Long id, AdoptionFollowupReq req) {
+        AdoptionFollowup followup = adoptionFollowupRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Follow-up record not found with ID: " + id));
+
+        followup.setAdopterFeedback(req.getAdopterFeedback());
+        followup.setPhotoUrl(req.getPhotoUrl());
+
+        // 🌟 ĐÃ SỬA: Gọi thông qua Enum nội bộ bên trong thực thể AdoptionFollowup
+        if (req.getPetCondition() != null) {
+            try {
+                String conditionStr = req.getPetCondition().toString().trim().toUpperCase();
+                followup.setPetCondition(group3.paws_hope.entity.AdoptionFollowup.PetCondition.valueOf(conditionStr));
+            } catch (IllegalArgumentException e) {
+                followup.setPetCondition(group3.paws_hope.entity.AdoptionFollowup.PetCondition.GOOD);
+            }
+        }
+
+        followup.setStatus(group3.paws_hope.entity.AdoptionFollowup.Status.COMPLETED);
+        AdoptionFollowup savedFollowup = adoptionFollowupRepository.save(followup);
+
+        Long currentAdoptionId = null;
+        if (savedFollowup.getAdoption() != null) {
+            currentAdoptionId = savedFollowup.getAdoption().getAdoptionId();
+        }
+
+        Long currentCreatedById = null;
+        if (savedFollowup.getCreatedBy() != null) {
+            try {
+                currentCreatedById = Long.valueOf(savedFollowup.getCreatedBy().toString());
+            } catch (Exception e) {
+                currentCreatedById = null;
+            }
+        }
+
+        return new AdoptionFollowupRes(
+                savedFollowup.getFollowupId(),
+                currentAdoptionId,
+                savedFollowup.getFollowupDate(),
+                savedFollowup.getFollowupType() != null ? savedFollowup.getFollowupType().toString() : null,
+                savedFollowup.getStatus() != null ? savedFollowup.getStatus().toString() : null,
+                savedFollowup.getConfirmedAt(),
+                savedFollowup.getCompletedAt(),
+                savedFollowup.getPetCondition() != null ? savedFollowup.getPetCondition().toString() : null,
+                savedFollowup.getAdopterFeedback(),
+                savedFollowup.getStaffNote(),
+                savedFollowup.getPhotoUrl(),
+                savedFollowup.getNextFollowupDate(),
+                currentCreatedById,
+                savedFollowup.getCreatedAt()
+        );
+    }
+
 }

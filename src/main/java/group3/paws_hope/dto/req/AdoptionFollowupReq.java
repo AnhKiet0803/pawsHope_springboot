@@ -1,5 +1,6 @@
 package group3.paws_hope.dto.req;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,8 +13,9 @@ public class AdoptionFollowupReq {
 
     @NotNull(message = "Adoption id cannot be null.")
     private Long adoptionId;
-
+    @JsonProperty("followup_date")
     private LocalDate followupDate;
+    @JsonProperty("followup_type")
     private String followupType;
     private String petCondition;
     private String adopterFeedback;

@@ -2,6 +2,7 @@ package group3.paws_hope.controller;
 
 import group3.paws_hope.common.ResponseHandler;
 import group3.paws_hope.dto.common.ResponseDTO;
+import group3.paws_hope.dto.req.PetStatusLogReq;
 import group3.paws_hope.dto.res.PetStatusLogRes;
 import group3.paws_hope.service.PetStatusLogService;
 import lombok.AllArgsConstructor;
@@ -24,5 +25,10 @@ public class PetStatusLogController {
     @GetMapping("/pet/{petId}")
     public ResponseEntity<ResponseDTO<List<PetStatusLogRes>>> getByPetId(@PathVariable Long petId) {
         return ResponseHandler.success(petStatusLogService.getByPetId(petId), "Success");
+    }
+
+    @PostMapping
+    public ResponseEntity<ResponseDTO<PetStatusLogRes>> create(@RequestBody PetStatusLogReq req) {
+        return ResponseHandler.success(petStatusLogService.create(req), "Status logged successfully");
     }
 }

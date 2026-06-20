@@ -119,4 +119,25 @@ public class AdoptionFollowupController {
                 "Success"
         );
     }
+
+    @GetMapping("/today")
+    public ResponseEntity<ResponseDTO<List<AdoptionFollowupRes>>> getTodayFollowups() {
+        return ResponseHandler.success(adoptionFollowupService.getTodayFollowups(), "Success");
+    }
+
+    @PatchMapping("/{id}/submit-report")
+    // 🌟 Cho phép ADMIN, VOLUNTEER HOẶC chính chủ sở hữu đơn nhận nuôi nộp báo cáo
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByFollowupId(#id, authentication.name)")
+    public ResponseEntity<ResponseDTO<AdoptionFollowupRes>> submitReport(
+            @PathVariable Long id,
+            @RequestBody AdoptionFollowupReq req
+    ) {
+        AdoptionFollowupRes res = adoptionFollowupService.submitReport(id, req);
+
+        if (res != null) {
+            return ResponseHandler.success(res, "Report submitted successfully.");
+        }
+
+        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Submit report failed");
+    }
 }

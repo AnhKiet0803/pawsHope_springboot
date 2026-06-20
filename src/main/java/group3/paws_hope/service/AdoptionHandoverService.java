@@ -64,7 +64,19 @@ public class AdoptionHandoverService {
             }
 
             if (req.getHandoverMethod() != null) {
-                handover.setHandoverMethod(AdoptionHandover.HandoverMethod.valueOf(req.getHandoverMethod()));
+                String method = req.getHandoverMethod().toUpperCase();
+
+                // Ánh xạ chuỗi từ Frontend sang Enum của bạn
+                if (method.contains("PICKUP") || method.contains("AT_SHELTER")) {
+                    handover.setHandoverMethod(AdoptionHandover.HandoverMethod.AT_SHELTER);
+                } else if (method.contains("HOME")) {
+                    handover.setHandoverMethod(AdoptionHandover.HandoverMethod.HOME_VISIT);
+                } else if (method.contains("MEETUP")) {
+                    handover.setHandoverMethod(AdoptionHandover.HandoverMethod.MEETUP_POINT);
+                } else {
+                    // Fallback hoặc báo lỗi
+                    throw new RuntimeException("Phương thức bàn giao không hợp lệ: " + method);
+                }
             }
 
             if (req.getStatus() != null) {
@@ -102,6 +114,8 @@ public class AdoptionHandoverService {
             return AdoptionHandoverRes.toJson(saved);
 
         } catch (Exception e) {
+            System.err.println("LỖI TẠO HANDOVER: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }

@@ -163,4 +163,22 @@ public class AdoptionMeetingService {
     public void delete(Long id) {
         adoptionMeetingRepository.deleteById(id);
     }
+
+    // Thêm hàm này vào file AdoptionMeetingService.java của bạn
+    public AdoptionMeetingRes requestReschedule(Long id, String proposedSlots) {
+        try {
+            AdoptionMeeting meeting = adoptionMeetingRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Meeting not found"));
+
+            // Chuyển trạng thái cuộc hẹn sang RESCHEDULED (Dời lịch)
+            meeting.setStatus(AdoptionMeeting.Status.RESCHEDULED);
+
+            // Lưu 3 slot khách chọn vào trường note để Admin đọc
+            meeting.setNote("Customer requested a reschedule. Proposed slots:\n" + proposedSlots);
+
+            return AdoptionMeetingRes.toJson(adoptionMeetingRepository.save(meeting));
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

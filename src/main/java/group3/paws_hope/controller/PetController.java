@@ -26,6 +26,11 @@ public class PetController {
         return ResponseHandler.success(petService.getAll(), "Success");
     }
 
+    @GetMapping("/adoptable")
+    public ResponseEntity<ResponseDTO<List<PetRes>>> getAdoptablePets() {
+        return ResponseHandler.success(petService.getAdoptablePets(), "Success");
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO<PetRes>> getById(@PathVariable Long id) {
         try {

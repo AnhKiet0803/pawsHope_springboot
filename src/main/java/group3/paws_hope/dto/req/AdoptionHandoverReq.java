@@ -1,5 +1,6 @@
 package group3.paws_hope.dto.req;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,6 +16,7 @@ public class AdoptionHandoverReq {
     private Long handledBy;
 
     @NotNull(message = "Pickup datetime cannot be null.")
+    @JsonFormat
     private LocalDateTime pickupDatetime;
 
     private String pickupLocation;

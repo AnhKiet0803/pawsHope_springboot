@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,20 +45,36 @@ public class AdoptionHandoverController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
-    public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> create(@Valid @RequestBody AdoptionHandoverReq req) {
+    public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> create(
+            @Valid @RequestBody AdoptionHandoverReq req,
+            BindingResult bindingResult) {
+
+        // 1. Kiểm tra lỗi validate
+        if (bindingResult.hasErrors()) {
+            String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, errorMsg);
+        }
+
+        // 2. Gọi service
         AdoptionHandoverRes res = adoptionHandoverService.create(req);
+
         if (res != null) {
             return ResponseHandler.success(res, "Handover scheduled successfully.");
         }
+
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Schedule handover failed");
     }
 
-    @PatchMapping("/{id}/confirm")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
-    public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> confirm(@PathVariable Long id) {
+    // 🌟 THÊM MỚI ENDPOINT: Khớp URL confirm-adopter và mở quyền cho chính chủ User gọi API
+    @PatchMapping("/{id}/confirm-adopter")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER') or @adoptionSecurity.isOwnerByHandoverId(#id, authentication.name)")
+    public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> confirmAdopter(@PathVariable Long id) {
+
+        // Gọi xuống hàm xử lý confirm của Service (tận dụng logic đổi trạng thái sang CONFIRMED của bạn)
         AdoptionHandoverRes res = adoptionHandoverService.confirm(id);
+
         if (res != null) {
-            return ResponseHandler.success(res, "Handover confirmed successfully.");
+            return ResponseHandler.success(res, "Handover schedule confirmed by adopter successfully.");
         }
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Confirm handover failed");
     }

@@ -9,6 +9,11 @@ import lombok.Setter;
 @Setter
 public class PetStatusLogReq {
 
+    @NotNull(message = "Pet ID cannot be null.")
+    private Long petId; // Cần cái này để biết đang update cho con nào
+
+    private String oldStatus; // Trạng thái cũ (để ghi log)
+
     @NotBlank(message = "New status cannot be left blank.")
     private String newStatus;
 

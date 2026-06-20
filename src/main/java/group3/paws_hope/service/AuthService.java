@@ -1,6 +1,5 @@
 package group3.paws_hope.service;
 
-
 import group3.paws_hope.dto.req.LoginUser;
 import group3.paws_hope.dto.req.RegisterUser;
 import group3.paws_hope.dto.res.LoginRes;
@@ -21,40 +20,60 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public boolean register(RegisterUser input){
-        if(userRepository.existsByEmail(input.getEmail())){
+    public boolean register(RegisterUser input) {
+        // 1. Làm sạch khoảng trắng và đưa về chữ thường để tránh lỗi trùng lặp ngầm
+        String cleanEmail = input.getEmail() != null ? input.getEmail().trim().toLowerCase() : "";
+        String cleanUsername = input.getUsername() != null ? input.getUsername().trim().toLowerCase() : "";
+
+        if (userRepository.existsByEmail(cleanEmail)) {
             throw new RuntimeException("Email already exists");
         }
-        if(userRepository.existsByUsername(input.getUsername())){
+        if (userRepository.existsByUsername(cleanUsername)) {
             throw new RuntimeException("Username already exists");
         }
 
         User user = new User();
-        user.setUsername(input.getUsername());
-        user.setEmail(input.getEmail());
-        user.setFullName(input.getFullName());
-        user.setPhone(input.getPhone());
+        user.setUsername(cleanUsername);
+        user.setEmail(cleanEmail);
+
+        // 2. Xử lý an toàn các trường có thể bị null từ phía giao diện
+        if (input.getFullName() != null) {
+            user.setFullName(input.getFullName().trim());
+        }
+        if (input.getPhone() != null) {
+            user.setPhone(input.getPhone().trim());
+        }
+
+        // 3. Mã hóa BCrypt tự động
         user.setPasswordHash(passwordEncoder.encode(input.getPassword()));
         user.setRole(User.Role.USER);
         user.setStatus(true);
+
         userRepository.save(user);
         return true;
     }
 
-    public LoginRes authenticate(LoginUser input){
+    public LoginRes authenticate(LoginUser input) {
+        // Làm sạch dữ liệu nhập vào từ ô tài khoản
+        String identifier = input.getEmail() != null ? input.getEmail().trim() : "";
+
+        // 1. Tìm kiếm thông minh: Thử tìm theo Email, nếu không thấy thì thử tìm theo Username
+        User user = userRepository.findByEmail(identifier)
+                .or(() -> userRepository.findByUsername(identifier))
+                .orElseThrow(() -> new UsernameNotFoundException("Email or password is not correct"));
+
+        // 2. Ủy quyền cho Spring Security đối chiếu mật khẩu băm BCrypt
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        input.getEmail(),
+                        user.getEmail(),
                         input.getPassword()
                 )
         );
 
-        User user = userRepository.findByEmail(input.getEmail())
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("Email or password is not correct"));
-
+        // 3. Tạo JWT Token bảo mật
         String jwtToken = jwtService.generateToken(user);
 
+        // 4. Đóng gói kết quả trả về cho React
         return new LoginRes(
                 jwtToken,
                 user.getUserId(),
@@ -66,4 +85,3 @@ public class AuthService {
         );
     }
 }
-

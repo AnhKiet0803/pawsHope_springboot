@@ -7,7 +7,6 @@ import group3.paws_hope.dto.res.UserRes;
 import group3.paws_hope.enums.StatusCode;
 import group3.paws_hope.service.UserService;
 import jakarta.validation.Valid;
-import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -72,7 +71,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<ResponseDTO<UserRes>> updateStatus(@PathVariable Long id,@RequestParam Boolean status) {
+    public ResponseEntity<ResponseDTO<UserRes>> updateStatus(@PathVariable Long id, @RequestParam Boolean status) {
         UserRes res = userService.updateStatus(id, status);
         if (res != null) {
             return ResponseHandler.success(res, "Status update successful");

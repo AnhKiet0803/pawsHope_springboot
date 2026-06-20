@@ -51,7 +51,7 @@ public class AdoptionMeeting {
     private Timestamp createdAt;
 
     public enum Status {
-        SCHEDULED, COMPLETED, CANCELLED, RESCHEDULED
+        SCHEDULED, RESCHEDULED, CONFIRMED, COMPLETED, CANCELLED
     }
 
     public enum Result {
