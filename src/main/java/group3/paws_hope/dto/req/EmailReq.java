@@ -5,7 +5,6 @@ public class EmailReq {
     private String subject;
     private String content;
 
-    // Getter và Setter (Hoặc dùng @Data nếu có Lombok)
     public String getTo() { return to; }
     public void setTo(String to) { this.to = to; }
     public String getSubject() { return subject; }

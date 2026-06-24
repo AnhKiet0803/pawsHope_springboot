@@ -18,12 +18,12 @@ public class EmailController {
     public ResponseEntity<?> sendEmail(@RequestBody EmailReq request) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("huyenptanifc@gmail.com"); // Email gửi đi (trùng với username cấu hình)
+            message.setFrom("huyenptanifc@gmail.com");
             message.setTo(request.getTo());
             message.setSubject(request.getSubject());
             message.setText(request.getContent());
 
-            mailSender.send(message); // Thực hiện gửi qua Gmail SMTP
+            mailSender.send(message);
 
             return ResponseEntity.ok("Email sent successfully!");
         } catch (Exception e) {

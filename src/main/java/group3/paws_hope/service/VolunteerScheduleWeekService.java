@@ -35,7 +35,7 @@ public class VolunteerScheduleWeekService {
     public List<VolunteerScheduleWeekRes> getByUserId(Long userId) {
         List<VolunteerScheduleWeek> userWeeks = volunteerScheduleWeekRepository.findByUser_UserId(userId);
         if (userWeeks == null || userWeeks.isEmpty()) {
-            return new java.util.ArrayList<>(); // Trả về mảng rỗng an toàn nếu user chưa đăng ký tuần nào
+            return new java.util.ArrayList<>();
         }
         return userWeeks.stream()
                 .filter(week -> week != null && week.getWindow() != null && week.getUser() != null)
@@ -43,7 +43,6 @@ public class VolunteerScheduleWeekService {
                     try {
                         return VolunteerScheduleWeekRes.toJson(week);
                     } catch (Exception e) {
-                        // Tránh việc 1 bản ghi lỗi làm sập toàn bộ danh sách
                         return null;
                     }
                 })
@@ -86,31 +85,23 @@ public class VolunteerScheduleWeekService {
 
             return VolunteerScheduleWeekRes.toJson(savedWeek);
         } catch (Exception e) {
-            System.err.println("--- LỖI TẠI HÀM CREATE VOLUNTEER SCHEDULE WEEK ---");
             e.printStackTrace();
             throw e;
         }
     }
+
     @Transactional
     public VolunteerScheduleWeekRes submit(Long id) {
         try {
             VolunteerScheduleWeek week = volunteerScheduleWeekRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Schedule week not found"));
 
-            int totalDays = volunteerScheduleRepository.countDistinctWorkDateByWeek_WeekIdAndUser_UserId(
-                    week.getWeekId(),
-                    week.getUser().getUserId()
-            );
-
-            if (totalDays < 5) {
-                throw new RuntimeException("Volunteer must register at least 5 working days per week");
-            }
-
             week.setStatus(VolunteerScheduleWeek.Status.SUBMITTED);
             week.setSubmittedAt(LocalDateTime.now());
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
