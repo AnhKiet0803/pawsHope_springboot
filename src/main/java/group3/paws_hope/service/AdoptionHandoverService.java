@@ -1,5 +1,7 @@
 package group3.paws_hope.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import group3.paws_hope.dto.req.AdoptionHandoverReq;
 import group3.paws_hope.dto.res.AdoptionHandoverRes;
 import group3.paws_hope.entity.Adoption;
@@ -13,9 +15,11 @@ import group3.paws_hope.repository.PetRepository;
 import group3.paws_hope.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile; // 🌟 Thêm import này
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map; // 🌟 Thêm import này
 
 @Service
 @AllArgsConstructor
@@ -26,6 +30,7 @@ public class AdoptionHandoverService {
     private final UserRepository userRepository;
     private final PetRepository petRepository;
     private final EmailService emailService;
+    private final Cloudinary cloudinary; // 🌟 Tự động nạp Bean Cloudinary nhờ @AllArgsConstructor của Lombok
 
     public List<AdoptionHandoverRes> getAll() {
         return adoptionHandoverRepository.findAll().stream()
@@ -66,7 +71,6 @@ public class AdoptionHandoverService {
             if (req.getHandoverMethod() != null) {
                 String method = req.getHandoverMethod().toUpperCase();
 
-                // Ánh xạ chuỗi từ Frontend sang Enum của bạn
                 if (method.contains("PICKUP") || method.contains("AT_SHELTER")) {
                     handover.setHandoverMethod(AdoptionHandover.HandoverMethod.AT_SHELTER);
                 } else if (method.contains("HOME")) {
@@ -74,7 +78,6 @@ public class AdoptionHandoverService {
                 } else if (method.contains("MEETUP")) {
                     handover.setHandoverMethod(AdoptionHandover.HandoverMethod.MEETUP_POINT);
                 } else {
-                    // Fallback hoặc báo lỗi
                     throw new RuntimeException("Phương thức bàn giao không hợp lệ: " + method);
                 }
             }
@@ -134,43 +137,105 @@ public class AdoptionHandoverService {
         }
     }
 
-    public AdoptionHandoverRes complete(Long id, String completionNote) {
+    // 🌟 TỐI ƯU VÀ BỔ SUNG LƯU ẢNH CLOUD + CẬP NHẬT BASE MYSQL TẠI ĐÂY
+    public AdoptionHandoverRes complete(Long id, String completionNote, MultipartFile file) {
         try {
+            // 1. Tìm bản ghi handover
             AdoptionHandover handover = adoptionHandoverRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Handover not found"));
 
+            // 2. Upload file ảnh trực tiếp lên Cloudinary
+            String secureUrl = null;
+            if (file != null && !file.isEmpty()) {
+                Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                        "folder", "pawshope_handovers"
+                ));
+                secureUrl = (String) uploadResult.get("secure_url");
+            }
+
+            // 3. Cập nhật dữ liệu cho thực thể Handover
             handover.setStatus(AdoptionHandover.Status.COMPLETED);
             handover.setCompletedAt(LocalDateTime.now());
             handover.setCompletionNote(completionNote);
+            if (secureUrl != null) {
+                handover.setHandoverPhotoUrl(secureUrl); // 🌟 Lưu link ảnh cloud vào database
+            }
 
+            // 4. Đồng bộ chuyển đổi trạng thái đơn Đăng ký nuôi (Adoption) sang COMPLETED
             Adoption adoption = handover.getAdoption();
             adoption.setStatus(Adoption.Status.COMPLETED);
             adoptionRepository.save(adoption);
 
+            // 5. Cập nhật thú cưng (Pet) sang trạng thái ADOPTED (Đã được nhận nuôi)
             Pet pet = adoption.getPet();
             pet.setStatus(Pet.Status.ADOPTED);
             petRepository.save(pet);
 
+            // Lưu tất cả thay đổi vào bảng adoption_handovers và trả về kết quả
             return AdoptionHandoverRes.toJson(adoptionHandoverRepository.save(handover));
         } catch (Exception e) {
+            System.err.println("LỖI HOÀN THÀNH BÀN GIAO: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
 
-    public AdoptionHandoverRes updateStatus(Long id, String status) {
+    public AdoptionHandoverRes updateStatus(Long id, String statusStr) {
         try {
-            AdoptionHandover adoptionHandover = adoptionHandoverRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Handover not found"));
+            AdoptionHandover handover = adoptionHandoverRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Handover arrangement not found"));
 
-            adoptionHandover.setStatus(AdoptionHandover.Status.valueOf(status));
+            // Chuyển chuỗi chữ từ React gửi lên thành Enum tương ứng
+            AdoptionHandover.Status newStatus = AdoptionHandover.Status.valueOf(statusStr.toUpperCase());
+            handover.setStatus(newStatus);
 
-            return AdoptionHandoverRes.toJson(adoptionHandoverRepository.save(adoptionHandover));
+            // 🌟 ĐỒNG BỘ LOGIC: Nếu Admin duyệt lịch đổi (Chuyển sang CONFIRMED từ trạng thái đổi lịch)
+            if (newStatus == AdoptionHandover.Status.CONFIRMED && handover.getCompletionNote() != null) {
+                String note = handover.getCompletionNote();
+
+                // Trích xuất ngày từ chuỗi: "Date: YYYY-MM-DD"
+                if (note.contains("Date: ")) {
+                    int dateIdx = note.indexOf("Date: ") + 6;
+                    String datePart = note.substring(dateIdx, dateIdx + 10); // Lấy chuỗi YYYY-MM-DD
+
+                    // Phân tích khung giờ được chọn để quy đổi ra giờ phút thực tế lưu DB
+                    String hourPart = "08:30:00"; // Mặc định Morning
+                    if (note.contains("Time: Noon")) hourPart = "11:30:00";
+                    else if (note.contains("Time: Afternoon")) hourPart = "14:00:00";
+                    else if (note.contains("Time: Evening")) hourPart = "17:00:00";
+
+                    // Ghép chuỗi thành LocalDateTime chuẩn ISO để lưu trực tiếp vào trường dữ liệu
+                    String isoDateTime = datePart + "T" + hourPart;
+                    handover.setPickupDatetime(java.time.LocalDateTime.parse(isoDateTime));
+                }
+
+                // Sau khi duyệt và đồng bộ giờ mới thành công, hạ cờ xác nhận của khách về false để bắt khách bấm nút Confirm
+                handover.setAdopterConfirmed(false);
+            }
+
+            return AdoptionHandoverRes.toJson(adoptionHandoverRepository.save(handover));
         } catch (Exception e) {
+            System.err.println("LỖI CẬP NHẬT TRẠNG THÁI BÀN GIAO: " + e.getMessage());
             return null;
         }
     }
 
     public void delete(Long id) {
         adoptionHandoverRepository.deleteById(id);
+    }
+
+    public AdoptionHandoverRes requestReschedule(Long id, String note) {
+        try {
+            AdoptionHandover handover = adoptionHandoverRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Handover arrangement not found"));
+
+            // Đổi trạng thái lịch sang RESCHEDULED (Đảm bảo cấu hình Enum Status của bạn có trường này)
+            handover.setStatus(AdoptionHandover.Status.RESCHEDULED);
+            handover.setCompletionNote(note); // Hoặc trường note bất kỳ dùng lưu lịch sử trao đổi lịch
+
+            return AdoptionHandoverRes.toJson(adoptionHandoverRepository.save(handover));
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

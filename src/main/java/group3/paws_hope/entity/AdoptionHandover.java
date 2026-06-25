@@ -62,6 +62,6 @@ public class AdoptionHandover {
     }
 
     public enum Status {
-        SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
+        SCHEDULED, CONFIRMED, RESCHEDULED, COMPLETED, CANCELLED, NO_SHOW
     }
 }

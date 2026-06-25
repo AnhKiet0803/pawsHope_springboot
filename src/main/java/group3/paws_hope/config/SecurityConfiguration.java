@@ -32,6 +32,9 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(
                         authorizationManagerRequestMatcherRegistry
                                 ->authorizationManagerRequestMatcherRegistry
+                                // 🌟 CHỐT CHẶN 1: Cho phép mọi yêu cầu kết nối bắt tay ban đầu (Handshake) của WebSocket đi qua không cần token
+                                .requestMatchers("/ws/**").permitAll()
+
                                 .requestMatchers("/api/v1/auth/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/adoption_guidelines/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/donation_campaigns/**").permitAll()
@@ -47,8 +50,8 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, "/api/v1/volunteer_applications").permitAll()
                                 .anyRequest().authenticated()
                 )
+                // Giữ nguyên cơ chế Http Basic cho các request thông thường bị lỗi auth
                 .httpBasic(Customizer.withDefaults())
-                // thêm cách xử lí token(jwt) để biết thông tin (provider)
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenicationFilter, UsernamePasswordAuthenticationFilter.class)
         ;
@@ -59,12 +62,15 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource(){
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedHeader("*");
-        configuration.addAllowedMethod("*"); //Get, Post, Put, Delete
-        configuration.addAllowedOrigin("*");
+        configuration.addAllowedMethod("*");
+        configuration.addAllowedOriginPattern("*"); // 🌟 Dùng origin pattern để hỗ trợ SockJS khi có kèm thông tin credentials
+        configuration.setAllowCredentials(true);    // 🌟 Cho phép gửi kèm cookie/headers xác thực khi bắt tay WebSocket
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // 🌟 CHỐT CHẶN 2: Đăng ký cấu hình CORS cho cả endpoints API và cổng kết nối WebSocket
         source.registerCorsConfiguration("/api/v1/**", configuration);
-        //source.registerCorsConfiguration("/api/v2/**", configuration);
+        source.registerCorsConfiguration("/ws/**", configuration);
+
         return source;
     }
 }
-

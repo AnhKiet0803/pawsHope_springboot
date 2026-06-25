@@ -26,6 +26,7 @@ public class AdoptionService {
     private final UserRepository userRepository;
     private final EmailService emailService;
 
+
     public List<AdoptionRes> getAll() {
         return adoptionRepository.findAll().stream()
                 .map(AdoptionRes::toJson)
@@ -248,4 +249,10 @@ public class AdoptionService {
                 .substring(0, 8)
                 .toUpperCase();
     }
+
+    // 🌟 SỬA THÀNH: Thêm phần thân hàm xử lý trực tiếp vì AdoptionService là một Class
+    public long countByStatus(group3.paws_hope.entity.Adoption.Status status) {
+        return adoptionRepository.countByStatus(status);
+    }
+
 }
