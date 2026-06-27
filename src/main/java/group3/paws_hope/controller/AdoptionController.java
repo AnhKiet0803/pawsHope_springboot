@@ -125,7 +125,6 @@ public class AdoptionController {
     @GetMapping("/count-pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<Long>> countPendingAdoptions() {
-        // 🌟 FIX: Viết thường chữ adoptionService và truyền đúng Enum Adoption.Status.PENDING
         long count = adoptionService.countByStatus(group3.paws_hope.entity.Adoption.Status.PENDING);
 
         return ResponseHandler.success(count, "Success");

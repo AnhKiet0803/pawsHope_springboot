@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -70,8 +71,22 @@ public class VolunteerScheduleWeekService {
             User user = userRepository.findById(req.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + req.getUserId()));
 
-            if (volunteerScheduleWeekRepository.existsByUser_UserIdAndWeekStartDate(user.getUserId(), window.getWeekStartDate())) {
-                throw new IllegalArgumentException("User already registered this week");
+            Optional<VolunteerScheduleWeek> existingWeekOpt = volunteerScheduleWeekRepository
+                    .findByUser_UserIdAndWindow_WindowId(user.getUserId(), window.getWindowId());
+
+            if (existingWeekOpt.isPresent()) {
+                VolunteerScheduleWeek existingWeek = existingWeekOpt.get();
+
+                if (existingWeek.getStatus() == VolunteerScheduleWeek.Status.REJECTED) {
+                    existingWeek.setStatus(VolunteerScheduleWeek.Status.DRAFT);
+                    existingWeek.setRejectionReason(null);
+                    existingWeek.setApprovedBy(null);
+                    existingWeek.setApprovedAt(null);
+
+                    return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(existingWeek));
+                } else {
+                    throw new IllegalArgumentException("User already registered this week");
+                }
             }
 
             VolunteerScheduleWeek week = new VolunteerScheduleWeek();
@@ -98,11 +113,12 @@ public class VolunteerScheduleWeekService {
 
             week.setStatus(VolunteerScheduleWeek.Status.SUBMITTED);
             week.setSubmittedAt(LocalDateTime.now());
+            week.setRejectionReason(null);
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            throw e;
         }
     }
 
@@ -122,7 +138,7 @@ public class VolunteerScheduleWeekService {
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
         } catch (Exception e) {
-            return null;
+            throw e;
         }
     }
 
@@ -142,7 +158,7 @@ public class VolunteerScheduleWeekService {
 
             return VolunteerScheduleWeekRes.toJson(volunteerScheduleWeekRepository.save(week));
         } catch (Exception e) {
-            return null;
+            throw e;
         }
     }
 

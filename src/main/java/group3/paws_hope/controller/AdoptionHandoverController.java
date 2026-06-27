@@ -24,7 +24,6 @@ public class AdoptionHandoverController {
     private final AdoptionHandoverService adoptionHandoverService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // 🌟 HÀM DUYỆT TRẠNG THÁI: Đã dọn dẹp trùng lặp, tích hợp WebSocket + sẵn sàng gửi Email
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> updateStatus(
@@ -32,16 +31,12 @@ public class AdoptionHandoverController {
 
         AdoptionHandoverRes res = adoptionHandoverService.updateStatus(id, status);
         if (res != null) {
-            // 1. 🌟 BẮN TÍN HIỆU REAL-TIME: Khách đổi giao diện hiển thị ngay lập tức không cần F5
             messagingTemplate.convertAndSend("/topic/adoption/" + res.getAdoptionId(), "HANDOVER_UPDATED");
-
-            // 2. 🌟 TRIGGER GỬI EMAIL: Nếu Admin duyệt đổi lịch thành công (CONFIRMED)
             if ("CONFIRMED".equalsIgnoreCase(status)) {
                 try {
-                    // Bạn gọi hàm gửi email từ EmailService của bạn tại đây
-                    // Ví dụ: emailService.sendHandoverConfirmationEmail(res);
+
                 } catch (Exception e) {
-                    System.err.println("Gặp lỗi khi gửi email thông báo: " + e.getMessage());
+                    System.err.println("Error encountered while sending notification email: " + e.getMessage());
                 }
             }
 
@@ -75,16 +70,13 @@ public class AdoptionHandoverController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<AdoptionHandoverRes>> create(
-            @Valid @RequestBody AdoptionHandoverReq req,
-            BindingResult bindingResult) {
+            @Valid @RequestBody AdoptionHandoverReq req,BindingResult bindingResult) {
 
-        // 1. Kiểm tra lỗi validate
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
             return ResponseHandler.error(StatusCode.BAD_REQUEST, errorMsg);
         }
 
-        // 2. Gọi service
         AdoptionHandoverRes res = adoptionHandoverService.create(req);
 
         if (res != null) {

@@ -250,7 +250,6 @@ public class AdoptionService {
                 .toUpperCase();
     }
 
-    // 🌟 SỬA THÀNH: Thêm phần thân hàm xử lý trực tiếp vì AdoptionService là một Class
     public long countByStatus(group3.paws_hope.entity.Adoption.Status status) {
         return adoptionRepository.countByStatus(status);
     }
