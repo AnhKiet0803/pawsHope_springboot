@@ -4,30 +4,57 @@ import group3.paws_hope.dto.req.DonationCampaignReq;
 import group3.paws_hope.dto.res.DonationCampaignRes;
 import group3.paws_hope.entity.DonationCampaign;
 import group3.paws_hope.entity.User;
+import group3.paws_hope.entity.Donation;
 import group3.paws_hope.repository.DonationCampaignRepository;
+import group3.paws_hope.repository.DonationRepository;
 import group3.paws_hope.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 @Service
 @AllArgsConstructor
 public class DonationCampaignService {
     private final DonationCampaignRepository donationCampaignRepository;
     private final UserRepository userRepository;
+    private final DonationRepository donationRepository;
+
+    private BigDecimal calculateRaisedAmount(Long campaignId) {
+        List<Donation> donations = donationRepository.findByCampaign_CampaignId(campaignId);
+        return donations.stream()
+                .filter(d -> d.getPaymentStatus() == Donation.PaymentStatus.PAID)
+                .map(Donation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
     public List<DonationCampaignRes> getAll() {
         return donationCampaignRepository.findAll().stream()
-                .map(DonationCampaignRes::toJson)
+                .map(campaign -> {
+                    DonationCampaignRes res = DonationCampaignRes.toJson(campaign);
+                    res.setRaisedAmount(calculateRaisedAmount(campaign.getCampaignId()));
+                    return res;
+                })
                 .toList();
     }
 
     public List<DonationCampaignRes> getByStatus(String status) {
+        // 1. Ép chuỗi truyền vào thành chữ hoa để tránh lỗi lệch viết hoa/thường (VD: active -> ACTIVE)
+        DonationCampaign.Status campaignStatus = DonationCampaign.Status.valueOf(status.toUpperCase().trim());
+
         return donationCampaignRepository
-                .findByStatus(DonationCampaign.Status.valueOf(status))
+                .findByStatus(campaignStatus)
                 .stream()
-                .map(DonationCampaignRes::toJson)
+                .map(campaign -> {
+                    // 2. Chuyển sang dạng DTO phản hồi
+                    DonationCampaignRes res = DonationCampaignRes.toJson(campaign);
+
+                    // 3. Tính toán số tiền thật đã quyên góp được dựa trên campaign_id từ database
+                    res.setRaisedAmount(calculateRaisedAmount(campaign.getCampaignId()));
+
+                    return res;
+                })
                 .toList();
     }
 
@@ -100,4 +127,6 @@ public class DonationCampaignService {
     public void delete(Long id) {
         donationCampaignRepository.deleteById(id);
     }
+
+
 }

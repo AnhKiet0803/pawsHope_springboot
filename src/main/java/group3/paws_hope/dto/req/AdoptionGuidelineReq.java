@@ -16,5 +16,7 @@ public class AdoptionGuidelineReq {
     @NotBlank(message = "Content cannot be left blank.")
     private String content;
 
+    private String imageUrl;
+
     private Integer priority;
 }

@@ -19,6 +19,8 @@ public class CartRes {
     private BigDecimal price;
     private Integer quantity;
     private BigDecimal totalPrice;
+    private String imageUrl;
+    private Integer stockQuantity;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -34,6 +36,8 @@ public class CartRes {
                 cart.getProduct().getPrice(),
                 cart.getQuantity(),
                 total,
+                cart.getProduct().getImageUrl(),
+                cart.getProduct().getStockQuantity(),
                 cart.getCreatedAt(),
                 cart.getUpdatedAt()
         );

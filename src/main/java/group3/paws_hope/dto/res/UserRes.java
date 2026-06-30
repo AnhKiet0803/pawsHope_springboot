@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Timestamp;
+
 @AllArgsConstructor
 @Setter
 @Getter
@@ -15,6 +17,8 @@ public class UserRes {
     private String email;
     private String phone;
     private Boolean status;
+    private String role;
+    private Timestamp createdAt;
 
     public static UserRes toJson(User user){
         return new UserRes(
@@ -23,7 +27,9 @@ public class UserRes {
                 user.getFullName(),
                 user.getEmail(),
                 user.getPhone(),
-                user.getStatus()
+                user.getStatus(),
+                user.getRole().name(),
+                user.getCreatedAt()
         );
     }
 }

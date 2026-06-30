@@ -58,11 +58,26 @@ public class VolunteerApplicationService {
             volunteerApplication.setHasTransport(req.getHasTransport() != null ? req.getHasTransport() : false);
             volunteerApplication.setStatus(VolunteerApplication.Status.PENDING);
 
-            return VolunteerApplicationRes.toJson(
-                    volunteerApplicationRepository.save(volunteerApplication)
+            VolunteerApplication savedApp = volunteerApplicationRepository.save(volunteerApplication);
+
+            emailService.sendEmail(
+                    savedApp.getEmail(),
+                    savedApp.getFullName(),
+                    "[PawsHope] Đăng ký Tình nguyện viên thành công",
+                    "Xin chào " + savedApp.getFullName() + ",\n\n"
+                            + "Cảm ơn bạn đã nộp đơn đăng ký làm tình nguyện viên tại PawsHope.\n"
+                            + "Hệ thống đã ghi nhận hồ sơ của bạn ở trạng thái CHỜ DUYỆT. Chúng tôi sẽ đánh giá và sớm gửi thông tin lịch hẹn gặp mặt tới bạn.\n\n"
+                            + "Trân trọng,\nPawsHope Team.",
+                    "volunteer_applications",
+                    savedApp.getApplicationId(),
+                    EmailLog.EmailType.VOLUNTEER_INTERVIEW,
+                    null
             );
 
+            return VolunteerApplicationRes.toJson(savedApp);
+
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -93,10 +108,11 @@ public class VolunteerApplicationService {
                 emailService.sendEmail(
                         saved.getEmail(),
                         saved.getFullName(),
-                        "Kết quả đăng ký tình nguyện viên",
-                        "Xin chào " + saved.getFullName()
-                                + ",\n\nChúc mừng bạn! Đơn đăng ký tình nguyện viên của bạn đã được duyệt."
-                                + "\nBạn có thể đăng nhập hệ thống để theo dõi các hoạt động tiếp theo.",
+                        "[PawsHope] Kết quả gặp mặt Tình nguyện viên - Đạt",
+                        "Xin chào " + saved.getFullName() + ",\n\n"
+                                + "Chúc mừng bạn! Đơn đăng ký tình nguyện viên của bạn đã chính thức được thông qua.\n"
+                                + "Chào mừng bạn đã trở thành một phần của đại gia đình PawsHope."
+                                + "Một lần nữa, chúng tôi xin cảm ơn bạn tham gia cùng chúng tôi.",
                         "volunteer_applications",
                         saved.getApplicationId(),
                         EmailLog.EmailType.VOLUNTEER_RESULT,
@@ -108,10 +124,13 @@ public class VolunteerApplicationService {
                 emailService.sendEmail(
                         saved.getEmail(),
                         saved.getFullName(),
-                        "Kết quả đăng ký tình nguyện viên",
-                        "Xin chào " + saved.getFullName()
-                                + ",\n\nRất tiếc, đơn đăng ký tình nguyện viên của bạn chưa được duyệt."
-                                + "\nLý do: " + rejectionReason,
+                        "[PawsHope] Kết quả gặp mặt Tình nguyện viên - Thông báo",
+                        "Xin chào " + saved.getFullName() + ",\n\n"
+                                + "Cảm ơn bạn đã dành thời gian nộp đơn và quan tâm đến các hoạt động của PawsHope.\n"
+                                + "Dựa trên số lượng hồ sơ hiện tại, rất tiếc chúng tôi chưa thể đồng hành cùng bạn trong đợt tuyển này.\n"
+                                + "Lý do cụ thể: " + (rejectionReason != null ? rejectionReason : "Chưa phù hợp tiêu chí đợt này.") + "\n\n"
+                                + "Thông tin hồ sơ của bạn vẫn sẽ được lưu trữ để ưu tiên liên hệ cho các chiến dịch thiện nguyện tiếp theo.\n"
+                                + "Chúc bạn luôn có thật nhiều sức khỏe!",
                         "volunteer_applications",
                         saved.getApplicationId(),
                         EmailLog.EmailType.VOLUNTEER_RESULT,
@@ -122,6 +141,7 @@ public class VolunteerApplicationService {
             return VolunteerApplicationRes.toJson(saved);
 
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

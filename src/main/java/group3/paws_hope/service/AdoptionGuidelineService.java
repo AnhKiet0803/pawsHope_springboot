@@ -37,6 +37,7 @@ public class AdoptionGuidelineService {
 
             guideline.setTitle(req.getTitle());
             guideline.setContent(req.getContent());
+            guideline.setImageUrl(req.getImageUrl());
             guideline.setPriority(
                     req.getPriority() != null ? req.getPriority() : 0
             );
@@ -57,6 +58,7 @@ public class AdoptionGuidelineService {
 
             guideline.setTitle(req.getTitle());
             guideline.setContent(req.getContent());
+            guideline.setImageUrl(req.getImageUrl());
             guideline.setPriority(
                     req.getPriority() != null ? req.getPriority() : 0
             );

@@ -21,7 +21,6 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
-    // Endpoint Đăng ký (Sử dụng AuthService)
     @PostMapping("/register")
     public ResponseEntity<ResponseDTO<Boolean>> register(@RequestBody RegisterUser req) {
         try {
@@ -31,7 +30,6 @@ public class AuthController {
         }
     }
 
-    // Endpoint Đăng nhập (Sử dụng UserService như logic mới bạn muốn)
     @PostMapping("/login")
     public ResponseEntity<ResponseDTO<Map<String, Object>>> login(@RequestBody LoginReq req) {
         try {

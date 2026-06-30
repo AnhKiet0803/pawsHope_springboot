@@ -21,6 +21,9 @@ public class AdoptionGuideline {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(nullable = false)
     private Integer priority = 0;
 }

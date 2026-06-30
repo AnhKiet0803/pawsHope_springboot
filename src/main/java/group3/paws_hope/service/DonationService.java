@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 @Service
 @AllArgsConstructor
@@ -105,5 +106,29 @@ public class DonationService {
 
     public void delete(Long id) {
         donationRepository.deleteById(id);
+    }
+
+    public void createDonationFromPaypal(Long campaignId, Long userId, String donorNameManual, Double amount) {
+        DonationCampaign campaign = donationCampaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+
+        Donation donation = new Donation();
+        donation.setCampaign(campaign);
+        donation.setAmount(BigDecimal.valueOf(amount));
+        donation.setDonationType(Donation.DonationType.DONATE);
+        donation.setPaymentStatus(Donation.PaymentStatus.PAID);
+
+        if (userId != null) {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null) {
+                donation.setUser(user);
+                donation.setDonorNameManual(user.getFullName());
+            } else {
+                donation.setDonorNameManual(donorNameManual);
+            }
+        } else {
+            donation.setDonorNameManual(donorNameManual != null ? donorNameManual : "GUEST");
+        }
+        donationRepository.save(donation);
     }
 }

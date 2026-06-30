@@ -78,7 +78,7 @@ public class OrderService {
             order.setTotalAmount(total);
             order.setPaymentMethod(Order.PaymentMethod.PAYPAL);
             order.setPaymentStatus(Order.PaymentStatus.PENDING);
-            order.setOrderStatus(Order.OrderStatus.CONFIRMED);
+            order.setOrderStatus(Order.OrderStatus.PENDING_PAYMENT);
             order.setShippingAddress(req.getShippingAddress());
             order.setReceiverName(req.getReceiverName());
             order.setReceiverPhone(req.getReceiverPhone());

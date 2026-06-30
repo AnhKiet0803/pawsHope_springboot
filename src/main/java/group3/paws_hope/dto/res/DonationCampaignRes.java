@@ -17,6 +17,7 @@ public class DonationCampaignRes {
     private String title;
     private String description;
     private BigDecimal targetAmount;
+    private BigDecimal raisedAmount;
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
@@ -29,6 +30,7 @@ public class DonationCampaignRes {
                 campaign.getTitle(),
                 campaign.getDescription(),
                 campaign.getTargetAmount(),
+                BigDecimal.ZERO,
                 campaign.getStartDate(),
                 campaign.getEndDate(),
                 campaign.getStatus().name(),

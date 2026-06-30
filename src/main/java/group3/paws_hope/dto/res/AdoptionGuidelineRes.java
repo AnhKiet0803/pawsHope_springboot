@@ -12,6 +12,7 @@ public class AdoptionGuidelineRes {
     private Long guideId;
     private String title;
     private String content;
+    private String imageUrl;
     private Integer priority;
 
     public static AdoptionGuidelineRes toJson(AdoptionGuideline adoptionGuideline) {
@@ -19,6 +20,7 @@ public class AdoptionGuidelineRes {
                 adoptionGuideline.getGuideId(),
                 adoptionGuideline.getTitle(),
                 adoptionGuideline.getContent(),
+                adoptionGuideline.getImageUrl(),
                 adoptionGuideline.getPriority()
         );
     }

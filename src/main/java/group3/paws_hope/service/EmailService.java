@@ -7,6 +7,7 @@ import group3.paws_hope.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ public class EmailService {
     private final EmailLogRepository emailLogRepository;
     private final UserRepository userRepository;
 
+    @Async
     public void sendEmail(
             String to,
             String recipientName,

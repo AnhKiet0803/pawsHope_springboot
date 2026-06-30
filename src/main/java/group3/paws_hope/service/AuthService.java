@@ -21,7 +21,6 @@ public class AuthService {
     private final JwtService jwtService;
 
     public boolean register(RegisterUser input) {
-        // 1. Làm sạch khoảng trắng và đưa về chữ thường để tránh lỗi trùng lặp ngầm
         String cleanEmail = input.getEmail() != null ? input.getEmail().trim().toLowerCase() : "";
         String cleanUsername = input.getUsername() != null ? input.getUsername().trim().toLowerCase() : "";
 
@@ -36,7 +35,6 @@ public class AuthService {
         user.setUsername(cleanUsername);
         user.setEmail(cleanEmail);
 
-        // 2. Xử lý an toàn các trường có thể bị null từ phía giao diện
         if (input.getFullName() != null) {
             user.setFullName(input.getFullName().trim());
         }
@@ -44,7 +42,6 @@ public class AuthService {
             user.setPhone(input.getPhone().trim());
         }
 
-        // 3. Mã hóa BCrypt tự động
         user.setPasswordHash(passwordEncoder.encode(input.getPassword()));
         user.setRole(User.Role.USER);
         user.setStatus(true);
@@ -54,15 +51,12 @@ public class AuthService {
     }
 
     public LoginRes authenticate(LoginUser input) {
-        // Làm sạch dữ liệu nhập vào từ ô tài khoản
         String identifier = input.getEmail() != null ? input.getEmail().trim() : "";
 
-        // 1. Tìm kiếm thông minh: Thử tìm theo Email, nếu không thấy thì thử tìm theo Username
         User user = userRepository.findByEmail(identifier)
                 .or(() -> userRepository.findByUsername(identifier))
                 .orElseThrow(() -> new UsernameNotFoundException("Email or password is not correct"));
 
-        // 2. Ủy quyền cho Spring Security đối chiếu mật khẩu băm BCrypt
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getEmail(),

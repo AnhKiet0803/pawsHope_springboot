@@ -41,7 +41,6 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<UserRes>> create(@Valid @RequestBody UserReq req) {
         UserRes res = userService.create(req);
         if (res != null) {
@@ -71,6 +70,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<UserRes>> updateStatus(@PathVariable Long id, @RequestParam Boolean status) {
         UserRes res = userService.updateStatus(id, status);
         if (res != null) {

@@ -89,21 +89,21 @@ public class UserService {
     }
 
     public Map<String, Object> login(LoginReq req) {
-        String identifier = req.getUsername().trim(); // Lấy chuỗi nhận được từ React
+        String identifier = req.getUsername().trim();
 
-        // 🔎 TÌM KIẾM THÔNG MINH: Thử tìm theo Username, nếu không thấy thì thử tìm theo Email
         User user = userRepository.findByEmail(req.getUsername().trim())
-                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại!"));
+                .orElseThrow(() -> new RuntimeException("Account does not exist!"));
 
-        // 2. Kiểm tra mật khẩu bằng BCrypt
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Sai mật khẩu!");
+            throw new RuntimeException("Incorrect account or password.!");
         }
 
-        // 3. Tạo Token bảo mật thật
+        if (Boolean.FALSE.equals(user.getStatus())) {
+            throw new RuntimeException("Your account has been disabled.");
+        }
+
         String realToken = jwtService.generateToken(user);
 
-        // 4. Đóng gói dữ liệu trả về đúng chuẩn React yêu cầu
         Map<String, Object> res = new HashMap<>();
         res.put("token", realToken);
         res.put("userId", user.getUserId());

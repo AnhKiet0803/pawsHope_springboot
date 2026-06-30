@@ -37,7 +37,13 @@ public class DonationCampaignController {
 
     @GetMapping("/status/{status}")
     public ResponseEntity<ResponseDTO<List<DonationCampaignRes>>> getByStatus(@PathVariable String status) {
-        return ResponseHandler.success(donationCampaignService.getByStatus(status), "Success");
+        try {
+            List<DonationCampaignRes> list = donationCampaignService.getByStatus(status);
+            return ResponseHandler.success(list, "Success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, "Service Error: " + e.getMessage());
+        }
     }
 
     @PostMapping
