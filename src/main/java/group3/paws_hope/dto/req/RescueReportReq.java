@@ -8,6 +8,8 @@ import lombok.Setter;
 @Setter
 public class RescueReportReq {
     private Long userId;
+
+    @NotBlank(message = "Reporter name cannot be left blank.")
     private String reporterName;
 
     @NotBlank(message = "Reporter phone cannot be left blank.")
@@ -20,6 +22,9 @@ public class RescueReportReq {
     private String injuryType;
     private String temperament;
     private String behavior;
+
+    @NotBlank(message = "Additional details cannot be left blank.")
     private String additionalNote;
+
     private String imageUrl;
 }
