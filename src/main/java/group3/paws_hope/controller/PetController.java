@@ -52,11 +52,11 @@ public class PetController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ResponseDTO<PetRes>> create(@Valid @RequestBody PetReq req) {
-        PetRes res = petService.create(req);
-        if (res != null) {
-            return ResponseHandler.success(res, "Pet created successfully.");
+        try {
+            return ResponseHandler.success(petService.create(req), "Pet created successfully.");
+        } catch (Exception e) {
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, e.getMessage());
         }
-        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Create pet failed");
     }
 
     @PutMapping("/{id}")

@@ -75,14 +75,19 @@ public class PetService {
             }
 
             if (req.getFromReportId() != null) {
+                if (petRepository.findByFromReport_ReportId(req.getFromReportId()).isPresent()) {
+                    throw new RuntimeException("A pet profile already exists for this rescue report.");
+                }
                 RescueReport rescueReport = rescueReportRepository.findById(req.getFromReportId())
                         .orElseThrow(() -> new RuntimeException("Rescue report not found"));
                 pet.setFromReport(rescueReport);
             }
 
             return PetRes.toJson(petRepository.save(pet));
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return null;
+            throw new RuntimeException("Create pet failed: " + e.getMessage());
         }
     }
 

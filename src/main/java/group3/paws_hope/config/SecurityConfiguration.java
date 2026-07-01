@@ -47,6 +47,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/v1/rescue_reports").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/rescue_reports/tracking/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/v1/contact_messages").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/v1/volunteer_applications").permitAll()
                                 .anyRequest().authenticated()
                 )

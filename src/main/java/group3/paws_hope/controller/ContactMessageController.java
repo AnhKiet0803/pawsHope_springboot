@@ -6,6 +6,7 @@ import group3.paws_hope.dto.req.ContactMessageReq;
 import group3.paws_hope.dto.res.ContactMessageRes;
 import group3.paws_hope.enums.StatusCode;
 import group3.paws_hope.service.ContactMessageService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,41 +17,33 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/contact_messages")
 @AllArgsConstructor
-
 public class ContactMessageController {
-
     private final ContactMessageService contactMessageService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<List<ContactMessageRes>>> getAll() {
-        return ResponseHandler.success(
-                contactMessageService.getAllMessages(),
-                "Success"
-        );
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseDTO<ContactMessageRes>> getById(@PathVariable Long id) {
-
-        return ResponseHandler.success(contactMessageService.getMessageById(id), "Success");
+        return ResponseHandler.success(contactMessageService.getAll(), "Success");
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO<String>> create(@RequestBody ContactMessageReq req) {
-        boolean ok = contactMessageService.createMessage(req);
-
-        if(ok){
-            return ResponseHandler.success("Message sent successfully", "Success");
+    public ResponseEntity<ResponseDTO<ContactMessageRes>> create(@Valid @RequestBody ContactMessageReq req) {
+        try {
+            return ResponseHandler.success(contactMessageService.create(req), "Message sent successfully.");
+        } catch (Exception e) {
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, e.getMessage());
         }
-
-        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Send failed");
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseDTO<ContactMessageRes>> updateStatus(@PathVariable Long id, @RequestParam String status) {
-        return ResponseHandler.success(contactMessageService.updateStatus(id, status), "Updated");
+    public ResponseEntity<ResponseDTO<ContactMessageRes>> updateStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        try {
+            return ResponseHandler.success(contactMessageService.updateStatus(id, status), "Status updated.");
+        } catch (Exception e) {
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, e.getMessage());
+        }
     }
 }

@@ -3,9 +3,8 @@ package group3.paws_hope.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "contact_messages")
@@ -25,23 +24,22 @@ public class ContactMessage {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    private SubjectType subject;
+    private Subject subject = Subject.OTHER;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     @Enumerated(EnumType.STRING)
-    private MessageStatus status = MessageStatus.UNREAD;
+    private Status status = Status.UNREAD;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private Timestamp createdAt;
 
-    public enum SubjectType {
+    public enum Subject {
         ADOPTION, VOLUNTEER, DONATION, PARTNERSHIP, OTHER
     }
 
-    public enum MessageStatus {
+    public enum Status {
         UNREAD, READ, REPLIED
     }
 }
