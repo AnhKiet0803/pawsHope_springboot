@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface RescueReportRepository extends JpaRepository<RescueReport, Long> {
     Optional<RescueReport> findByTrackingCode(String trackingCode);
     List<RescueReport> findByStatus(RescueReport.Status status);
+    List<RescueReport> findByUser_UserIdOrderByReportIdDesc(Long userId);
 }
