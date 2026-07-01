@@ -41,12 +41,13 @@ public class VolunteerScheduleWindowController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<VolunteerScheduleWindowRes>> create(
             @Valid @RequestBody VolunteerScheduleWindowReq req) {
-
-        VolunteerScheduleWindowRes res = volunteerScheduleWindowService.create(req);
-        if (res != null) {
+        try {
+            VolunteerScheduleWindowRes res = volunteerScheduleWindowService.create(req);
             return ResponseHandler.success(res, "Schedule window created successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseHandler.error(StatusCode.BAD_REQUEST, e.getMessage());
         }
-        return ResponseHandler.error(StatusCode.BAD_REQUEST, "Create schedule window failed");
     }
 
     @PutMapping("/{id}")

@@ -78,7 +78,13 @@ public class VolunteerScheduleWindowService {
         window.setWeekEndDate(weekEnd);
         window.setOpenAt(openDate.atTime(8, 0));
         window.setCloseAt(closeDate.atTime(23, 59));
-        window.setStatus(calculateStatus(window));
+        if (req.getStatus() != null && !req.getStatus().isBlank()) {
+            window.setStatus(
+                    VolunteerScheduleWindow.Status.valueOf(req.getStatus())
+            );
+        } else {
+            window.setStatus(calculateStatus(window));
+        }
 
         return VolunteerScheduleWindowRes.toJson(
                 volunteerScheduleWindowRepository.save(window)

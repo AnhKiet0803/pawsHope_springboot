@@ -16,13 +16,10 @@ public class VolunteerScheduleWindowReq {
     @NotNull(message = "Week start date cannot be null.")
     private LocalDate weekStartDate;
 
-    @NotNull(message = "Week end date cannot be null.")
     private LocalDate weekEndDate;
 
-    @NotNull(message = "Open time cannot be null.")
     private LocalDateTime openAt;
 
-    @NotNull(message = "Close time cannot be null.")
     private LocalDateTime closeAt;
 
     private String status;
