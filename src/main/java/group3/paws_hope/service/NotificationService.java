@@ -8,6 +8,7 @@ import group3.paws_hope.repository.NotificationRepository;
 import group3.paws_hope.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import java.util.List;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public List<NotificationRes> getAll() {
         return notificationRepository.findAll().stream()
@@ -52,7 +54,14 @@ public class NotificationService {
             if (req.getType() != null) {
                 noti.setType(Notification.Type.valueOf(req.getType()));
             }
-            return NotificationRes.toJson(notificationRepository.save(noti));
+            Notification saved = notificationRepository.save(noti);
+
+            messagingTemplate.convertAndSend(
+                    "/topic/notifications/admin",
+                    NotificationRes.toJson(saved)
+            );
+
+            return NotificationRes.toJson(saved);
         } catch (Exception e) {
             return null;
         }
@@ -66,7 +75,12 @@ public class NotificationService {
         noti.setRelatedId(relatedId);
         noti.setIsRead(false);
 
-        notificationRepository.save(noti);
+        Notification saved = notificationRepository.save(noti);
+
+        messagingTemplate.convertAndSend(
+                "/topic/notifications/admin",
+                NotificationRes.toJson(saved)
+        );
     }
 
     public NotificationRes markAsRead(Long id) {
@@ -76,7 +90,14 @@ public class NotificationService {
 
             noti.setIsRead(true);
 
-            return NotificationRes.toJson(notificationRepository.save(noti));
+            Notification saved = notificationRepository.save(noti);
+
+            messagingTemplate.convertAndSend(
+                    "/topic/notifications/admin",
+                    NotificationRes.toJson(saved)
+            );
+
+            return NotificationRes.toJson(saved);
         } catch (Exception e) {
             return null;
         }

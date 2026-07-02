@@ -110,6 +110,7 @@ public class UserService {
         res.put("username", user.getUsername());
         res.put("email", user.getEmail());
         res.put("fullName", user.getFullName() != null ? user.getFullName() : "Admin");
+        res.put("phone", user.getPhone());
         res.put("role", user.getRole().name());
 
         return res;
