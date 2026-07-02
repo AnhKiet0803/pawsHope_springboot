@@ -7,14 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PetRepository extends JpaRepository<Pet, Long> {
-
     Optional<Pet> findByPetCode(String petCode);
-
     boolean existsByPetCode(String petCode);
-
-    // Tìm các pet có trạng thái cụ thể
     List<Pet> findByStatus(Pet.Status status);
-
     Optional<Pet> findByFromReport_ReportId(Long reportId);
 
 }

@@ -20,9 +20,7 @@ public class AdminAccountInitializer {
                 admin.setFullName("System Admin");
 
                 userRepository.save(admin);
-                System.out.println("==================================================");
                 System.out.println(" TẠO TÀI KHOẢN ADMIN THÀNH CÔNG!");
-                System.out.println("==================================================");
             }
         };
     }

@@ -160,10 +160,8 @@ public class PetService {
     }
 
     public List<PetRes> getAdoptablePets() {
-        // Lấy danh sách thú cưng có trạng thái sẵn sàng nhận nuôi từ DB
         List<Pet> adoptablePets = petRepository.findByStatus(Pet.Status.AVAILABLE_FOR_ADOPTION);
 
-        // Chuyển đổi List<Pet> thành List<PetRes> bằng hàm toJson của bạn
         return adoptablePets.stream()
                 .map(PetRes::toJson)
                 .collect(Collectors.toList());
