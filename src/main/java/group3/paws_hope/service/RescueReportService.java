@@ -70,7 +70,7 @@ public class RescueReportService {
         }
     }
 
-    public RescueReportRes accept(Long reportId, String email) {
+    public RescueReportRes accept(Long reportId, String actorEmail, Long assigneeUserId) {
         try {
             RescueReport rescueReport = rescueReportRepository.findById(reportId)
                     .orElseThrow(() -> new RuntimeException("Rescue report not found"));
@@ -83,18 +83,23 @@ public class RescueReportService {
                 throw new RuntimeException("Only pending rescue reports can be accepted");
             }
 
-            User receiver = userRepository.findByEmail(email)
+            User actor = userRepository.findByEmail(actorEmail)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            if (receiver.getRole() != User.Role.ADMIN
-                    && receiver.getRole() != User.Role.VOLUNTEER) {
+            if (actor.getRole() != User.Role.ADMIN
+                    && actor.getRole() != User.Role.VOLUNTEER) {
                 throw new RuntimeException("Only admin or volunteer can accept rescue reports");
             }
+
+            User receiver = resolveAssignee(actor, assigneeUserId);
 
             rescueReport.setAssignedTo(receiver);
             rescueReport.setStatus(RescueReport.Status.IN_PROGRESS);
 
-            return RescueReportRes.toJson(rescueReportRepository.save(rescueReport));
+            RescueReport saved = rescueReportRepository.save(rescueReport);
+            notifyAssignee(saved, receiver);
+
+            return RescueReportRes.toJson(saved);
 
         } catch (RuntimeException e) {
             throw e;
@@ -103,17 +108,52 @@ public class RescueReportService {
         }
     }
 
+    private User resolveAssignee(User actor, Long assigneeUserId) {
+        if (assigneeUserId == null) {
+            return actor;
+        }
+
+        if (actor.getRole() == User.Role.VOLUNTEER) {
+            if (!assigneeUserId.equals(actor.getUserId())) {
+                throw new RuntimeException("Volunteers can only accept cases for themselves");
+            }
+            return actor;
+        }
+
+        User receiver = userRepository.findById(assigneeUserId)
+                .orElseThrow(() -> new RuntimeException("Assignee not found"));
+
+        if (receiver.getRole() != User.Role.ADMIN
+                && receiver.getRole() != User.Role.VOLUNTEER) {
+            throw new RuntimeException("Rescue cases can only be assigned to admin or volunteer staff");
+        }
+
+        return receiver;
+    }
+
     public RescueReportRes updateStatus(Long id, String status) {
         try {
             RescueReport rescueReport = rescueReportRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Rescue report not found"));
-            rescueReport.setStatus(RescueReport.Status.valueOf(status));
+
+            RescueReport.Status newStatus = RescueReport.Status.valueOf(status);
+            validateStatusChange(rescueReport, newStatus);
+            rescueReport.setStatus(newStatus);
 
             return RescueReportRes.toJson(rescueReportRepository.save(rescueReport));
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Update status failed");
+        }
+    }
+
+    private void validateStatusChange(RescueReport report, RescueReport.Status newStatus) {
+        if (newStatus == RescueReport.Status.PENDING && report.getAssignedTo() != null) {
+            throw new RuntimeException("Cannot revert to PENDING after this case has been assigned.");
+        }
+        if (newStatus == RescueReport.Status.IN_PROGRESS && report.getAssignedTo() == null) {
+            throw new RuntimeException("Assign this case before setting status to IN_PROGRESS.");
         }
     }
 
@@ -127,6 +167,9 @@ public class RescueReportService {
         }
         if (image == null || image.isEmpty()) {
             throw new RuntimeException("Rescue photo is required.");
+        }
+        if (image.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("Rescue photo must be 5 MB or smaller.");
         }
         if (image.getContentType() == null || !image.getContentType().startsWith("image/")) {
             throw new RuntimeException("Uploaded file must be an image.");
@@ -184,12 +227,22 @@ public class RescueReportService {
         for (User receiver : receivers) {
             Notification notification = new Notification();
             notification.setUser(receiver);
-            notification.setMessage("New rescue report: " + report.getLocationText());
+            notification.setMessage("New rescue report submitted: " + report.getLocationText());
             notification.setType(Notification.Type.RESCUE_ASSIGNED);
             notification.setRelatedId(report.getReportId());
             notification.setIsRead(false);
             notificationRepository.save(notification);
         }
+    }
+
+    private void notifyAssignee(RescueReport report, User assignee) {
+        Notification notification = new Notification();
+        notification.setUser(assignee);
+        notification.setMessage("Rescue case assigned to you: " + report.getTrackingCode());
+        notification.setType(Notification.Type.RESCUE_ASSIGNED);
+        notification.setRelatedId(report.getReportId());
+        notification.setIsRead(false);
+        notificationRepository.save(notification);
     }
 
     private String generateTrackingCode() {

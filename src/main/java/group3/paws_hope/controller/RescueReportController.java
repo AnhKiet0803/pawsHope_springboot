@@ -65,7 +65,6 @@ public class RescueReportController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDTO<RescueReportRes>> create(
-            @RequestParam(required = false) Long userId,
             @RequestParam String reporterName,
             @RequestParam String reporterPhone,
             @RequestParam String locationText,
@@ -74,11 +73,15 @@ public class RescueReportController {
             @RequestParam(defaultValue = "SCARED") String temperament,
             @RequestParam(defaultValue = "ACTIVE") String behavior,
             @RequestParam String additionalNote,
-            @RequestParam("image") MultipartFile image
+            @RequestParam("image") MultipartFile image,
+            Authentication authentication
     ) {
         try {
             group3.paws_hope.dto.req.RescueReportReq req = new group3.paws_hope.dto.req.RescueReportReq();
-            req.setUserId(userId);
+            if (authentication != null && authentication.isAuthenticated()) {
+                userRepository.findByEmail(authentication.getName())
+                        .ifPresent(user -> req.setUserId(user.getUserId()));
+            }
             req.setReporterName(reporterName);
             req.setReporterPhone(reporterPhone);
             req.setLocationText(locationText);
@@ -98,9 +101,12 @@ public class RescueReportController {
 
     @PatchMapping("/{id}/accept")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
-    public ResponseEntity<ResponseDTO<RescueReportRes>> accept(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<ResponseDTO<RescueReportRes>> accept(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long assigneeUserId,
+            Authentication authentication) {
         try {
-            RescueReportRes res = rescueReportService.accept(id, authentication.getName());
+            RescueReportRes res = rescueReportService.accept(id, authentication.getName(), assigneeUserId);
             broadcastRescueUpdate(res);
             return ResponseHandler.success(res, "Rescue report accepted successfully.");
         } catch (Exception e) {

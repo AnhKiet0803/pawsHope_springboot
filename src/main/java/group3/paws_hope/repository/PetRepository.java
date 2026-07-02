@@ -15,4 +15,6 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     // Tìm các pet có trạng thái cụ thể
     List<Pet> findByStatus(Pet.Status status);
 
+    Optional<Pet> findByFromReport_ReportId(Long reportId);
+
 }
