@@ -40,21 +40,53 @@ public class OrderService {
                 .toList();
     }
 
+    public OrderRes getPendingOrder(Long userId) {
+
+        Order order = orderRepository
+                .findFirstByUser_UserIdAndOrderStatusAndPaymentStatus(
+                        userId,
+                        Order.OrderStatus.PENDING_PAYMENT,
+                        Order.PaymentStatus.PENDING
+                )
+                .orElse(null);
+
+        if (order == null) {
+            return null;
+        }
+
+        return convertToRes(order);
+    }
+
     @Transactional
     public OrderRes createFromCart(OrderReq req) {
         try {
             User user = userRepository.findById(req.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
+            Order existingOrder = orderRepository
+                    .findFirstByUser_UserIdAndOrderStatusAndPaymentStatus(
+                            req.getUserId(),
+                            Order.OrderStatus.PENDING_PAYMENT,
+                            Order.PaymentStatus.PENDING
+                    )
+                    .orElse(null);
+
+            if (existingOrder != null) {
+                return convertToRes(existingOrder);
+            }
+
             List<Cart> cartItems = cartRepository.findByUser_UserId(req.getUserId());
+            System.out.println("Cart size = " + cartItems.size());
 
             if (cartItems.isEmpty()) {
                 throw new RuntimeException("Cart is empty");
             }
 
             BigDecimal subtotal = BigDecimal.ZERO;
+
             for (Cart cart : cartItems) {
                 Product product = cart.getProduct();
+
                 if (!product.getIsActive()) {
                     throw new RuntimeException("Product is not active: " + product.getProductName());
                 }
@@ -68,7 +100,10 @@ public class OrderService {
                 );
             }
 
-            BigDecimal shippingFee = req.getShippingFee() != null ? req.getShippingFee() : BigDecimal.ZERO;
+            BigDecimal shippingFee = req.getShippingFee() != null
+                    ? req.getShippingFee()
+                    : BigDecimal.ZERO;
+
             BigDecimal total = subtotal.add(shippingFee);
 
             Order order = new Order();
@@ -85,27 +120,60 @@ public class OrderService {
             order.setNote(req.getNote());
 
             Order savedOrder = orderRepository.save(order);
-            for (Cart cart : cartItems) {
-                Product product = cart.getProduct();
-
-                OrderItem item = new OrderItem();
-                item.setOrder(savedOrder);
-                item.setProduct(product);
-                item.setProductNameSnapshot(product.getProductName());
-                item.setQuantity(cart.getQuantity());
-                item.setPriceAtPurchase(product.getPrice());
-
-                orderItemRepository.save(item);
-
-                product.setStockQuantity(product.getStockQuantity() - cart.getQuantity());
-                productRepository.save(product);
-            }
-            cartRepository.deleteByUser_UserId(req.getUserId());
 
             return convertToRes(savedOrder);
+
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
+    }
+
+    @Transactional
+    public OrderRes finishOrder(Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        Long userId = order.getUser().getUserId();
+
+        List<Cart> cartItems = cartRepository.findByUser_UserId(userId);
+
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        for (Cart cart : cartItems) {
+
+            Product product = cart.getProduct();
+
+            if (cart.getQuantity() > product.getStockQuantity()) {
+                throw new RuntimeException("Not enough stock for " + product.getProductName());
+            }
+
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProduct(product);
+            item.setProductNameSnapshot(product.getProductName());
+            item.setQuantity(cart.getQuantity());
+            item.setPriceAtPurchase(product.getPrice());
+
+            orderItemRepository.save(item);
+
+            product.setStockQuantity(
+                    product.getStockQuantity() - cart.getQuantity());
+
+            productRepository.save(product);
+        }
+
+        cartRepository.deleteByUser_UserId(userId);
+
+        order.setPaymentStatus(Order.PaymentStatus.PAID);
+        order.setOrderStatus(Order.OrderStatus.CONFIRMED);
+
+        orderRepository.save(order);
+
+        return convertToRes(order);
     }
 
     public OrderRes updateOrderStatus(Long id, String status) {
@@ -140,5 +208,29 @@ public class OrderService {
                 .map(OrderItemRes::toJson)
                 .toList();
         return OrderRes.toJson(order, items);
+    }
+
+    @Transactional
+    public void cancelOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getOrderStatus() != Order.OrderStatus.PENDING_PAYMENT) {
+            return;
+        }
+
+        order.setOrderStatus(Order.OrderStatus.CANCELLED);
+
+        List<OrderItem> items = orderItemRepository.findByOrder_OrderId(orderId);
+
+        for (OrderItem item : items) {
+            Product product = item.getProduct();
+            product.setStockQuantity(
+                    product.getStockQuantity() + item.getQuantity()
+            );
+            productRepository.save(product);
+        }
+
+        orderRepository.save(order);
     }
 }

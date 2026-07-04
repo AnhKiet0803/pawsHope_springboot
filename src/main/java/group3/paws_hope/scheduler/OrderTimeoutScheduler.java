@@ -24,37 +24,43 @@ public class OrderTimeoutScheduler {
     private final ProductRepository productRepository;
 
     @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 30000)
     @Transactional
     public void releaseExpiredOrders() {
-        LocalDateTime fourMinutesAgo = LocalDateTime.now().minusMinutes(4);
-        Timestamp timeoutThreshold = Timestamp.valueOf(fourMinutesAgo);
-        List<Order> expiredOrders = orderRepository.findByOrderStatusAndCreatedAtBefore(
-                Order.OrderStatus.PENDING_PAYMENT,
-                timeoutThreshold
-        );
 
-        if (!expiredOrders.isEmpty()) {
-            System.out.println("[SCHEDULER] Detect " + expiredOrders.size() + " Order payment overdue by 4 minutes.");
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(4);
+        Timestamp timeout = Timestamp.valueOf(threshold);
 
-            for (Order order : expiredOrders) {
-                order.setOrderStatus(Order.OrderStatus.CANCELLED);
-                orderRepository.save(order);
+        List<Order> expiredOrders =
+                orderRepository.findByOrderStatusAndCreatedAtBefore(
+                        Order.OrderStatus.PENDING_PAYMENT,
+                        timeout
+                );
 
-                List<OrderItem> items = orderItemRepository.findByOrder_OrderId(order.getOrderId());
-                for (OrderItem item : items) {
-                    Product product = item.getProduct();
-                    product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
-                    productRepository.save(product);
-                    System.out.println(
-                            "[SCHEDULER] Refunded "
-                                    + item.getQuantity()
-                                    + " Product [" + product.getProductName()
-                                    + "] to the warehouse."
-                    );
-                }
+        for (Order order : expiredOrders) {
 
-                System.out.println("[SCHEDULER] Successfully cancelled order number: #" + order.getOrderId());
+            // 🔥 IMPORTANT: tránh cancel order đã paid
+            if (order.getPaymentStatus() != Order.PaymentStatus.PENDING) {
+                continue;
             }
+
+            order.setOrderStatus(Order.OrderStatus.CANCELLED);
+            order.setPaymentStatus(Order.PaymentStatus.FAILED);
+
+            List<OrderItem> items =
+                    orderItemRepository.findByOrder_OrderId(order.getOrderId());
+
+            for (OrderItem item : items) {
+                Product product = item.getProduct();
+                product.setStockQuantity(
+                        product.getStockQuantity() + item.getQuantity()
+                );
+                productRepository.save(product);
+            }
+
+            orderRepository.save(order);
+
+            System.out.println("[SCHEDULER] Cancelled order #" + order.getOrderId());
         }
     }
 }

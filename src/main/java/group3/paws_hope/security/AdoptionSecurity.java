@@ -32,6 +32,11 @@ public class AdoptionSecurity {
                 .map(meeting -> {
                     var user = meeting.getAdoption().getUser();
 
+                    System.out.println("===== CHECK OWNER =====");
+                    System.out.println("Auth name: " + usernameOrEmail);
+                    System.out.println("DB Email : " + user.getEmail());
+                    System.out.println("DB User  : " + user.getUsername());
+
                     return user.getEmail().equals(usernameOrEmail)
                             || user.getUsername().equals(usernameOrEmail);
                 })

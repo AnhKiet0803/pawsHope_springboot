@@ -36,13 +36,9 @@ public class PaypalController {
 
     @PostMapping("/capture-order/{paypalOrderId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> captureOrder(
-            @PathVariable String paypalOrderId,
-            @RequestBody OrderReq req
-    ) {
+    public ResponseEntity<?> captureOrder(@PathVariable String paypalOrderId, @RequestBody OrderReq req) {
         try {
             Map<String, Object> captureResult = paypalService.captureOrder(paypalOrderId);
-            System.out.println("CAPTURE RESULT = " + captureResult);
 
             String status = String.valueOf(captureResult.get("status"));
 
@@ -50,17 +46,11 @@ public class PaypalController {
                 return ResponseHandler.error(StatusCode.BAD_REQUEST, "PayPal payment not completed");
             }
 
-            OrderRes order = orderService.createFromCart(req);
-
-            if (order == null) {
-                return ResponseHandler.error(StatusCode.BAD_REQUEST, "Create order failed");
-            }
-
-            OrderRes paidOrder = orderService.updatePaymentStatus(order.getOrderId(), "PAID");
+            OrderRes paidOrder = orderService.finishOrder(req.getOrderId());
 
             return ResponseHandler.success(
                     paidOrder,
-                    "PayPal payment completed and order created"
+                    "PayPal payment completed"
             );
         } catch (Exception e) {
             e.printStackTrace();

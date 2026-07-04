@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 public class OrderReq {
+    private Long orderId;
 
     @NotNull(message = "User id cannot be null.")
     private Long userId;

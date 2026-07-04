@@ -42,6 +42,20 @@ public class OrderController {
         return ResponseHandler.success(orderService.getByUserId(userId), "Success");
     }
 
+    @GetMapping("/pending/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isOwner(#userId, authentication.name)")
+    public ResponseEntity<ResponseDTO<OrderRes>> getPendingOrder(
+            @PathVariable Long userId
+    ) {
+        OrderRes res = orderService.getPendingOrder(userId);
+
+        if (res != null) {
+            return ResponseHandler.success(res, "Pending order found");
+        }
+
+        return ResponseHandler.error(StatusCode.BAD_REQUEST, "No pending order");
+    }
+
     @PostMapping("/checkout")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ResponseDTO<OrderRes>> createFromCart(@Valid @RequestBody OrderReq req) {
@@ -70,5 +84,12 @@ public class OrderController {
             return ResponseHandler.success(res, "Payment status updated.");
         }
         return ResponseHandler.error(StatusCode.BAD_REQUEST, "Update payment status failed");
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id) {
+        orderService.cancelOrder(id);
+        return ResponseHandler.success(null, "Order cancelled");
     }
 }
